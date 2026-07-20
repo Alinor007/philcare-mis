@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/philcare.Api/philcare.Api.csproj" Id="b84edf1d-5a62-4301-81af-02e84222a02e" />
+  <Project Path="test/philcare.Test/philcare.Test.csproj" Id="ae140e1b-a2c0-48c0-ac31-67e5e7c59ab3" />
+</Solution>

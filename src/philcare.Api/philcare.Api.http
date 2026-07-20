@@ -1,0 +1,24 @@
+@philcare.Api_HostAddress = http://localhost:5182
+
+### Login
+POST {{philcare.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@philcare.local",
+  "password": "Admin@12345"
+}
+
+### Get current user (replace {{token}} with the accessToken from login)
+GET {{philcare.Api_HostAddress}}/api/auth/me
+Authorization: Bearer {{token}}
+
+### Get all lookups
+GET {{philcare.Api_HostAddress}}/api/lookups
+Authorization: Bearer {{token}}
+
+### Get lookups by category
+GET {{philcare.Api_HostAddress}}/api/lookups/fund_type
+Authorization: Bearer {{token}}
+
+###

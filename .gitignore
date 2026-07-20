@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+
+# Rider / JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Local, machine-specific config with secrets (JWT secret, DB credentials, seed admin password)
+**/appsettings.Development.json
+**/appsettings.*.local.json
+
+# EF Core / test artifacts
+*.db
+*.db-shm
+*.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

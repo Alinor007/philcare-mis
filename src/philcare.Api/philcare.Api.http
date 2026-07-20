@@ -21,4 +21,70 @@ Authorization: Bearer {{token}}
 GET {{philcare.Api_HostAddress}}/api/lookups/fund_type
 Authorization: Bearer {{token}}
 
+### --- Finance module (Sprint 2) ---
+
+### Create donor
+POST {{philcare.Api_HostAddress}}/api/donors
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Human Appeal Australia",
+  "type": "Organization",
+  "email": "contact@humanappeal.org.au"
+}
+
+### List donors
+GET {{philcare.Api_HostAddress}}/api/donors
+Authorization: Bearer {{token}}
+
+### Create zakat donation (auto-allocates program/admin/amil)
+POST {{philcare.Api_HostAddress}}/api/donations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "donorId": 1,
+  "amount": 10000,
+  "currency": "PHP",
+  "fundType": "ZAKAT",
+  "receivedDate": "2026-07-20T00:00:00Z",
+  "paymentMethod": "BANK_TRANSFER",
+  "adminAllowed": true,
+  "adminRate": 0.15,
+  "amilRate": 0.125
+}
+
+### List fund buckets (live balances)
+GET {{philcare.Api_HostAddress}}/api/fund-buckets
+Authorization: Bearer {{token}}
+
+### Create zakat expense (requires zakatAsnaf + beneficiaryCount)
+POST {{philcare.Api_HostAddress}}/api/expenses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fundBucketId": 1,
+  "amount": 2000,
+  "expenseCategory": "RELIEF_DISTRIBUTION",
+  "paymentMethod": "CASH",
+  "expenseDate": "2026-07-20T00:00:00Z",
+  "description": "Relief goods distribution",
+  "zakatAsnaf": "FUQARA",
+  "beneficiaryCount": 40
+}
+
+### Fund summary report
+GET {{philcare.Api_HostAddress}}/api/reports/fund-summary
+Authorization: Bearer {{token}}
+
+### Zakat asnaf report
+GET {{philcare.Api_HostAddress}}/api/reports/zakat-asnaf
+Authorization: Bearer {{token}}
+
+### Donor utilization report
+GET {{philcare.Api_HostAddress}}/api/reports/donor-utilization/1
+Authorization: Bearer {{token}}
+
 ###

@@ -13,6 +13,12 @@ using philcare.Api.Features.Auth.RefreshToken;
 using philcare.Api.Features.Auth.Register;
 using philcare.Api.Features.Auth.RevokeAllSessions;
 using philcare.Api.Features.Auth.Services;
+using philcare.Api.Features.Finance.Donations.CreateDonation;
+using philcare.Api.Features.Finance.Donations.VoidDonation;
+using philcare.Api.Features.Finance.Donors.CreateDonor;
+using philcare.Api.Features.Finance.Donors.UpdateDonor;
+using philcare.Api.Features.Finance.Expenses.CreateExpense;
+using philcare.Api.Features.Finance.Expenses.VoidExpense;
 using philcare.Api.Features.ReferenceData.CreateLookup;
 using philcare.Api.Features.ReferenceData.UpdateLookup;
 using philcare.Api.Features.Users.UpdateUser;
@@ -75,7 +81,8 @@ public static class DependencyInjection
             });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy("Admin", policy => policy.RequireRole("Admin"));
+            .AddPolicy("Admin", policy => policy.RequireRole("Admin"))
+            .AddPolicy("Finance", policy => policy.RequireRole("Finance", "Admin"));
 
         services.Configure<LockoutOptions>(configuration.GetSection(LockoutOptions.SectionName));
 
@@ -102,6 +109,14 @@ public static class DependencyInjection
         services.AddScoped<CreateLookupHandler>();
         services.AddScoped<UpdateLookupHandler>();
         services.AddScoped<UpdateUserHandler>();
+
+        // Finance handlers — Sprint 2
+        services.AddScoped<CreateDonorHandler>();
+        services.AddScoped<UpdateDonorHandler>();
+        services.AddScoped<CreateDonationHandler>();
+        services.AddScoped<VoidDonationHandler>();
+        services.AddScoped<CreateExpenseHandler>();
+        services.AddScoped<VoidExpenseHandler>();
 
         return services;
     }

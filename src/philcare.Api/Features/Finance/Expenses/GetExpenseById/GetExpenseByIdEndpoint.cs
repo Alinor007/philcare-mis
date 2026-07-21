@@ -6,13 +6,19 @@ namespace philcare.Api.Features.Finance.Expenses.GetExpenseById;
 
 public sealed record ExpenseDetailResponse(
     int Id,
-    int FundBucketId,
-    decimal Amount,
+    string FundCode,
+    string FundingBucketCode,
+    decimal AmountOriginal,
+    string Currency,
+    decimal FxRateToPhp,
+    decimal AmountPhp,
     string ExpenseCategory,
     string PaymentMethod,
     DateTime ExpenseDate,
     string Description,
-    string? Reference,
+    string? ReceiptNo,
+    string ApprovalStatus,
+    string? ApprovedBy,
     string? ZakatAsnaf,
     int? BeneficiaryCount,
     bool IsVoided);
@@ -26,8 +32,9 @@ public sealed class GetExpenseByIdEndpoint : IEndpoint
             var expense = await db.Expenses
                 .Where(e => e.Id == id)
                 .Select(e => new ExpenseDetailResponse(
-                    e.Id, e.FundBucketId, e.Amount, e.ExpenseCategory, e.PaymentMethod, e.ExpenseDate,
-                    e.Description, e.Reference, e.ZakatAsnaf, e.BeneficiaryCount, e.IsVoided))
+                    e.Id, e.FundCode, e.FundingBucketCode, e.AmountOriginal, e.Currency, e.FxRateToPhp, e.AmountPhp,
+                    e.ExpenseCategory, e.PaymentMethod, e.ExpenseDate, e.Description, e.ReceiptNo, e.ApprovalStatus,
+                    e.ApprovedBy, e.ZakatAsnaf, e.BeneficiaryCount, e.IsVoided))
                 .FirstOrDefaultAsync(ct);
 
             if (expense is null)

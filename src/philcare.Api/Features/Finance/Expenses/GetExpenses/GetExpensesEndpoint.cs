@@ -5,14 +5,14 @@ using philcare.Api.Common.Persistence;
 namespace philcare.Api.Features.Finance.Expenses.GetExpenses;
 
 public sealed record ExpenseListItemResponse(
-    int Id, int FundBucketId, decimal Amount, string ExpenseCategory, DateTime ExpenseDate, bool IsVoided);
+    int Id, string FundingBucketCode, decimal AmountPhp, string ExpenseCategory, DateTime ExpenseDate, bool IsVoided);
 
 public sealed class GetExpensesEndpoint : IEndpoint
 {
     public void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/expenses", async (
-            int? fundBucketId,
+            string? fundingBucketCode,
             string? expenseCategory,
             DateTime? from,
             DateTime? to,
@@ -27,9 +27,9 @@ public sealed class GetExpensesEndpoint : IEndpoint
                 query = query.Where(e => !e.IsVoided);
             }
 
-            if (fundBucketId is not null)
+            if (!string.IsNullOrWhiteSpace(fundingBucketCode))
             {
-                query = query.Where(e => e.FundBucketId == fundBucketId);
+                query = query.Where(e => e.FundingBucketCode == fundingBucketCode);
             }
 
             if (!string.IsNullOrWhiteSpace(expenseCategory))
@@ -49,7 +49,7 @@ public sealed class GetExpensesEndpoint : IEndpoint
 
             var expenses = await query
                 .OrderByDescending(e => e.ExpenseDate)
-                .Select(e => new ExpenseListItemResponse(e.Id, e.FundBucketId, e.Amount, e.ExpenseCategory, e.ExpenseDate, e.IsVoided))
+                .Select(e => new ExpenseListItemResponse(e.Id, e.FundingBucketCode, e.AmountPhp, e.ExpenseCategory, e.ExpenseDate, e.IsVoided))
                 .ToListAsync(ct);
 
             return Results.Ok(expenses);

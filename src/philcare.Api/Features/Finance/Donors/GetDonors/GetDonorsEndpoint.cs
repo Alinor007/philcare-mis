@@ -5,7 +5,8 @@ using philcare.Api.Features.Finance.Domain;
 
 namespace philcare.Api.Features.Finance.Donors.GetDonors;
 
-public sealed record DonorListItemResponse(int Id, string Name, DonorType Type, string? Email, string? Phone, bool IsActive);
+public sealed record DonorListItemResponse(
+    int Id, string Name, DonorType Type, string? Email, string? Phone, bool IsActive, KydStatus KydStatus, RiskRating RiskRating);
 
 public sealed class GetDonorsEndpoint : IEndpoint
 {
@@ -22,7 +23,7 @@ public sealed class GetDonorsEndpoint : IEndpoint
 
             var donors = await query
                 .OrderBy(d => d.Name)
-                .Select(d => new DonorListItemResponse(d.Id, d.Name, d.Type, d.Email, d.Phone, d.IsActive))
+                .Select(d => new DonorListItemResponse(d.Id, d.Name, d.Type, d.Email, d.Phone, d.IsActive, d.KydStatus, d.RiskRating))
                 .ToListAsync(ct);
 
             return Results.Ok(donors);

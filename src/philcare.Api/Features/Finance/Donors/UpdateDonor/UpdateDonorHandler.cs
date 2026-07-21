@@ -20,12 +20,18 @@ public sealed class UpdateDonorHandler(AppDbContext db)
         donor.Email = request.Email;
         donor.Phone = request.Phone;
         donor.Address = request.Address;
+        donor.Country = request.Country;
         donor.Notes = request.Notes;
         donor.IsActive = request.IsActive;
+        donor.KydStatus = request.KydStatus;
+        donor.RiskRating = request.RiskRating;
+        donor.PepFlag = request.PepFlag;
+        donor.PrivacyConsent = request.PrivacyConsent;
 
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateDonorResponse(
-            donor.Id, donor.Name, donor.Type, donor.Email, donor.Phone, donor.Address, donor.Notes, donor.IsActive));
+            donor.Id, donor.Name, donor.Type, donor.Email, donor.Phone, donor.Address, donor.Country, donor.Notes,
+            donor.IsActive, donor.KydStatus, donor.RiskRating, donor.PepFlag, donor.PrivacyConsent));
     }
 }

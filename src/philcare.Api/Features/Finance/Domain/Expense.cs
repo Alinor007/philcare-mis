@@ -4,19 +4,39 @@ namespace philcare.Api.Features.Finance.Domain;
 
 public class Expense : Entity
 {
-    public int FundBucketId { get; set; }
-    public FundBucket FundBucket { get; set; } = null!;
-
-    public decimal Amount { get; set; }
-    public string ExpenseCategory { get; set; } = string.Empty;
-    public string PaymentMethod { get; set; } = string.Empty;
     public DateTime ExpenseDate { get; set; }
+    public string PayeeVendor { get; set; } = string.Empty;
+    public string ExpenseCategory { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string? Reference { get; set; }
 
-    // Required when the fund bucket's fund type is zakat.
+    public string FundCode { get; set; } = string.Empty;
+    public Fund Fund { get; set; } = null!;
+
+    public string? ProgramOrProject { get; set; }
+    public string PaymentMethod { get; set; } = string.Empty;
+
+    public decimal AmountOriginal { get; set; }
+    public string Currency { get; set; } = "PHP";
+    public decimal FxRateToPhp { get; set; } = 1m;
+    public decimal AmountPhp { get; set; }
+
+    public string? ReceiptNo { get; set; }
+    public string ApprovalStatus { get; set; } = "Pending";
+    public string? ApprovedBy { get; set; }
+    public string? SupportingDocStatus { get; set; }
+    public int? LinkedDonationId { get; set; }
+
+    public string? ExpenseFunction { get; set; }
+
+    public string FundingBucketCode { get; set; } = string.Empty;
+    public FundingBucket FundingBucket { get; set; } = null!;
+
+    // Required when the funding bucket sits under the Zakat fund's Program bucket.
     public string? ZakatAsnaf { get; set; }
     public int? BeneficiaryCount { get; set; }
+    public string? BeneficiaryType { get; set; }
 
+    public string? AdminEligibility { get; set; }
+    public string? Notes { get; set; }
     public bool IsVoided { get; set; }
 }

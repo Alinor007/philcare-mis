@@ -9,7 +9,7 @@ public sealed class VoidExpenseHandler(AppDbContext db)
     public async Task<Result> HandleAsync(int id, CancellationToken cancellationToken)
     {
         var expense = await db.Expenses
-            .Include(e => e.FundBucket)
+            .Include(e => e.FundingBucket)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
         if (expense is null)
@@ -23,7 +23,7 @@ public sealed class VoidExpenseHandler(AppDbContext db)
         }
 
         expense.IsVoided = true;
-        expense.FundBucket.TotalExpensed -= expense.Amount;
+        expense.FundingBucket.ExpensedAmount -= expense.AmountPhp;
 
         await db.SaveChangesAsync(cancellationToken);
 

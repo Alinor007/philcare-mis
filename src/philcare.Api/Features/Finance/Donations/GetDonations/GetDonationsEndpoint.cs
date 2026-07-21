@@ -5,7 +5,7 @@ using philcare.Api.Common.Persistence;
 namespace philcare.Api.Features.Finance.Donations.GetDonations;
 
 public sealed record DonationListItemResponse(
-    int Id, int DonorId, string DonorName, decimal Amount, string FundType, DateTime ReceivedDate, bool IsVoided);
+    int Id, int DonorId, string DonorName, decimal AmountPhp, string FundCode, DateTime DateReceived, bool IsVoided);
 
 public sealed class GetDonationsEndpoint : IEndpoint
 {
@@ -13,7 +13,7 @@ public sealed class GetDonationsEndpoint : IEndpoint
     {
         app.MapGet("/api/donations", async (
             int? donorId,
-            string? fundType,
+            string? fundCode,
             DateTime? from,
             DateTime? to,
             bool? includeVoided,
@@ -32,24 +32,24 @@ public sealed class GetDonationsEndpoint : IEndpoint
                 query = query.Where(d => d.DonorId == donorId);
             }
 
-            if (!string.IsNullOrWhiteSpace(fundType))
+            if (!string.IsNullOrWhiteSpace(fundCode))
             {
-                query = query.Where(d => d.FundType == fundType);
+                query = query.Where(d => d.FundCode == fundCode);
             }
 
             if (from is not null)
             {
-                query = query.Where(d => d.ReceivedDate >= from);
+                query = query.Where(d => d.DateReceived >= from);
             }
 
             if (to is not null)
             {
-                query = query.Where(d => d.ReceivedDate <= to);
+                query = query.Where(d => d.DateReceived <= to);
             }
 
             var donations = await query
-                .OrderByDescending(d => d.ReceivedDate)
-                .Select(d => new DonationListItemResponse(d.Id, d.DonorId, d.Donor.Name, d.Amount, d.FundType, d.ReceivedDate, d.IsVoided))
+                .OrderByDescending(d => d.DateReceived)
+                .Select(d => new DonationListItemResponse(d.Id, d.DonorId, d.Donor.Name, d.AmountPhp, d.FundCode, d.DateReceived, d.IsVoided))
                 .ToListAsync(ct);
 
             return Results.Ok(donations);

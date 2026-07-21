@@ -1,0 +1,162 @@
+{
+  "Funds": [
+    {
+      "Code": "ZAKA-FUND",
+      "Name": "Zakat",
+      "IsRestricted": true,
+      "PolicyNotes": "Use only for Sharia-eligible beneficiaries; segregated tracking required.",
+      "UseCase": "Poverty and eligible relief cases",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "SADA-FUND",
+      "Name": "Sadaqah / Charity",
+      "IsRestricted": false,
+      "PolicyNotes": "Track donor restrictions where applicable.",
+      "UseCase": "General charitable support",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "GENE-FUND",
+      "Name": "General / Unrestricted",
+      "IsRestricted": false,
+      "PolicyNotes": "Can support approved operations within policy.",
+      "UseCase": "General programs and operations",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "REST-FUND",
+      "Name": "Restricted Grant / Partner Funds",
+      "IsRestricted": true,
+      "PolicyNotes": "Use only as agreed with donor.",
+      "UseCase": "Project-specific expenditure",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "OPER-FUND",
+      "Name": "Operations / Admin",
+      "IsRestricted": false,
+      "PolicyNotes": "Use for approved operating and support costs.",
+      "UseCase": "Office, admin, compliance, support",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "CAPX-FUND",
+      "Name": "Capital Expenditure",
+      "IsRestricted": true,
+      "PolicyNotes": "Track separately for major fixed assets and capital acquisitions.",
+      "UseCase": "Asset purchase and capex items",
+      "SeparateTrackingRequired": true
+    }
+  ],
+  "Buckets": [
+    {
+      "Code": "ZAK-PROG",
+      "Name": "Zakat Program Distribution",
+      "FundCode": "ZAKA-FUND",
+      "BucketType": "Program",
+      "MaxAdminRate": 0,
+      "PolicyRule": "Disburse Zakat only to Sharia-eligible asnaf categories.",
+      "TypicalUse": "Cash assistance, food, debt relief, eligible relief",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "ZAK-AMIL",
+      "Name": "Zakat Amil Share",
+      "FundCode": "ZAKA-FUND",
+      "BucketType": "Admin",
+      "MaxAdminRate": 0.125,
+      "PolicyRule": "Zakat collectors' share; capped at 12.5% and must be directly tied to collecting/administering zakat.",
+      "TypicalUse": "Zakat collection/admin staff and direct zakat administration",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "REST-PROG",
+      "Name": "Restricted Project Program",
+      "FundCode": "REST-FUND",
+      "BucketType": "Program",
+      "MaxAdminRate": 0,
+      "PolicyRule": "Disburse only per the donor's purpose/contract.",
+      "TypicalUse": "Project direct costs",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "REST-ADMIN",
+      "Name": "Restricted Admin Recovery",
+      "FundCode": "REST-FUND",
+      "BucketType": "Admin",
+      "MaxAdminRate": 0.15,
+      "PolicyRule": "Admin rate allowed only if the contract/donor permits; default cap 15%.",
+      "TypicalUse": "Project admin, compliance, reporting, support",
+      "SeparateTrackingRequired": true
+    },
+    {
+      "Code": "GENE-PROG",
+      "Name": "General Donation Program",
+      "FundCode": "GENE-FUND",
+      "BucketType": "Program",
+      "MaxAdminRate": 0,
+      "PolicyRule": "General donations for programs per approved priority.",
+      "TypicalUse": "General humanitarian programs",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "GENE-ADMIN",
+      "Name": "General Donation Admin",
+      "FundCode": "GENE-FUND",
+      "BucketType": "Admin",
+      "MaxAdminRate": 0.15,
+      "PolicyRule": "Admin support from general donations per policy and approval.",
+      "TypicalUse": "Office/admin/compliance support",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "SADA-PROG",
+      "Name": "Sadaqah Program",
+      "FundCode": "SADA-FUND",
+      "BucketType": "Program",
+      "MaxAdminRate": 0,
+      "PolicyRule": "Sadaqah for humanitarian programs unless the donor restricts it.",
+      "TypicalUse": "Food, relief, education, health",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "SADA-ADMIN",
+      "Name": "Sadaqah Admin",
+      "FundCode": "SADA-FUND",
+      "BucketType": "Admin",
+      "MaxAdminRate": 0.15,
+      "PolicyRule": "Used for operations only if not prohibited by the donor, or if designated for that purpose.",
+      "TypicalUse": "Admin support linked to sadaqah operations",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "OPER-POOL",
+      "Name": "Operations Pool",
+      "FundCode": "OPER-FUND",
+      "BucketType": "Operations",
+      "MaxAdminRate": 1.0,
+      "PolicyRule": "Operating pool receiving allowed admin rates or direct admin support.",
+      "TypicalUse": "Office, staff support, utilities, compliance",
+      "SeparateTrackingRequired": false
+    },
+    {
+      "Code": "CAPX-FUND",
+      "Name": "Capital Assets",
+      "FundCode": "CAPX-FUND",
+      "BucketType": "Capital",
+      "MaxAdminRate": 0,
+      "PolicyRule": "For assets and capital expenditures per the capital spending policy.",
+      "TypicalUse": "Assets, equipment, IT, vehicles",
+      "SeparateTrackingRequired": true
+    }
+  ],
+  "OpeningBalances": [
+    { "Year": 2026, "FundCode": "ZAKA-FUND", "Currency": "PHP", "OpeningBalancePhp": 0, "Source": "Manual/Bank reconciliation", "Notes": "Set opening balance if applicable" },
+    { "Year": 2026, "FundCode": "SADA-FUND", "Currency": "PHP", "OpeningBalancePhp": 0, "Source": "Manual/Bank reconciliation", "Notes": "Set opening balance if applicable" },
+    { "Year": 2026, "FundCode": "GENE-FUND", "Currency": "PHP", "OpeningBalancePhp": 0, "Source": "Manual/Bank reconciliation", "Notes": "Set opening balance if applicable" },
+    { "Year": 2026, "FundCode": "OPER-FUND", "Currency": "PHP", "OpeningBalancePhp": 0, "Source": "Manual/Bank reconciliation", "Notes": "Set opening balance if applicable" },
+    { "Year": 2026, "FundCode": "CAPX-FUND", "Currency": "PHP", "OpeningBalancePhp": 0, "Source": "Manual/Bank reconciliation", "Notes": "Set opening balance if applicable" },
+    { "Year": 2026, "FundCode": "REST-FUND", "Currency": "PHP", "OpeningBalancePhp": 139930.15, "Source": "2025 Ending Balance", "Notes": "Restricted opening balance carried from 2025. Must be included in cash flow and fund balance." }
+  ]
+}

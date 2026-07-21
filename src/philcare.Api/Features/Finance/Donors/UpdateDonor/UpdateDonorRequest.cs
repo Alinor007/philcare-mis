@@ -8,8 +8,25 @@ public sealed record UpdateDonorRequest(
     string? Email,
     string? Phone,
     string? Address,
+    string? Country,
     string? Notes,
-    bool IsActive);
+    bool IsActive,
+    KydStatus KydStatus,
+    RiskRating RiskRating,
+    bool PepFlag,
+    bool PrivacyConsent);
 
 public sealed record UpdateDonorResponse(
-    int Id, string Name, DonorType Type, string? Email, string? Phone, string? Address, string? Notes, bool IsActive);
+    int Id,
+    string Name,
+    DonorType Type,
+    string? Email,
+    string? Phone,
+    string? Address,
+    string? Country,
+    string? Notes,
+    bool IsActive,
+    KydStatus KydStatus,
+    RiskRating RiskRating,
+    bool PepFlag,
+    bool PrivacyConsent);

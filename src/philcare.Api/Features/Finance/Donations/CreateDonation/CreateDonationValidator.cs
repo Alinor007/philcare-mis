@@ -8,19 +8,20 @@ public sealed class CreateDonationValidator : AbstractValidator<CreateDonationRe
     public CreateDonationValidator()
     {
         RuleFor(x => x.DonorId).GreaterThan(0);
-        RuleFor(x => x.Amount).GreaterThan(0);
+        RuleFor(x => x.AmountOriginal).GreaterThan(0);
         RuleFor(x => x.Currency).NotEmpty().MaximumLength(10);
-        RuleFor(x => x.FundType).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.PaymentMethod).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.AdminRate).InclusiveBetween(0, FinanceRules.MaxAdminRate)
-            .WithMessage($"Admin rate cannot exceed {FinanceRules.MaxAdminRate:P1}.");
-        RuleFor(x => x.AmilRate).InclusiveBetween(0, FinanceRules.MaxAmilRate)
-            .WithMessage($"Amil rate cannot exceed {FinanceRules.MaxAmilRate:P1}.");
-        RuleFor(x => x.AmilRate)
-            .Equal(0)
-            .When(x => !string.Equals(x.FundType, FinanceRules.ZakatFundType, StringComparison.OrdinalIgnoreCase))
-            .WithMessage("Amil rate is only allowed for zakat donations.");
-        RuleFor(x => x.Reference).MaximumLength(100);
+        RuleFor(x => x.FxRateToPhp).GreaterThan(0);
+        RuleFor(x => x.Channel).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.FundCode).NotEmpty().MaximumLength(20);
+        RuleFor(x => x.Purpose).MaximumLength(200);
+        RuleFor(x => x.ProgramOrProject).MaximumLength(200);
+        RuleFor(x => x.ReceiptNo).MaximumLength(100);
+        RuleFor(x => x.CashDocumentationStatus).MaximumLength(50);
         RuleFor(x => x.Notes).MaximumLength(1000);
+
+        // Sanity ceiling; the authoritative cap is the target admin bucket's own MaxAdminRate,
+        // enforced by CreateDonationHandler once the fund/bucket is resolved.
+        RuleFor(x => x.AdminRateInput).InclusiveBetween(0, FinanceRules.MaxAdminRate)
+            .WithMessage($"Admin rate cannot exceed {FinanceRules.MaxAdminRate:P1}.");
     }
 }

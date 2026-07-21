@@ -131,13 +131,21 @@ namespace philcare.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AdminAmount")
+                    b.Property<decimal>("AllocatedAmountPhp")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
-                    b.Property<decimal>("AmilAmount")
-                        .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)");
+                    b.Property<DateTime>("AllocationDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("AllocationRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("AllocationType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -145,15 +153,38 @@ namespace philcare.Api.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<int>("DonationId")
+                    b.Property<int?>("DonationId")
                         .HasColumnType("int");
 
-                    b.Property<int>("FundBucketId")
-                        .HasColumnType("int");
+                    b.Property<string>("EvidenceNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
-                    b.Property<decimal>("ProgramAmount")
+                    b.Property<decimal>("GrossAmountPhp")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
+
+                    b.Property<decimal>("PolicyCap")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<int>("ReportingYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SourceFundCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("TargetBucketCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -163,10 +194,11 @@ namespace philcare.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DonationId")
-                        .IsUnique();
+                    b.HasIndex("DonationId");
 
-                    b.HasIndex("FundBucketId");
+                    b.HasIndex("SourceFundCode");
+
+                    b.HasIndex("TargetBucketCode");
 
                     b.ToTable("Allocations", (string)null);
                 });
@@ -179,20 +211,57 @@ namespace philcare.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("AdminAllocationPhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
                     b.Property<bool>("AdminAllowed")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<decimal>("AdminRate")
+                    b.Property<string>("AdminBucketCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<decimal>("AdminRateApplied")
                         .HasPrecision(5, 4)
                         .HasColumnType("decimal(5,4)");
 
-                    b.Property<decimal>("AmilRate")
+                    b.Property<decimal>("AdminRateCap")
                         .HasPrecision(5, 4)
                         .HasColumnType("decimal(5,4)");
 
-                    b.Property<decimal>("Amount")
+                    b.Property<decimal>("AdminRateInput")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("AllocationStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("AmlReviewFlag")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<decimal>("AmountOriginal")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
+
+                    b.Property<decimal>("AmountPhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("CashDocumentationStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ComplianceCheck")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -205,34 +274,65 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(10)
                         .HasColumnType("varchar(10)");
 
+                    b.Property<DateTime>("DateReceived")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<int>("DonorId")
                         .HasColumnType("int");
 
-                    b.Property<string>("FundType")
+                    b.Property<string>("FundCode")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<decimal>("FxRateToPhp")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<bool>("IsVoided")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
+                    b.Property<string>("KydStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Notes")
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
-                    b.Property<string>("PaymentMethod")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<decimal>("ProgramAllocationPhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
 
-                    b.Property<DateTime>("ReceivedDate")
-                        .HasColumnType("datetime(6)");
+                    b.Property<string>("ProgramBucketCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
-                    b.Property<string>("Reference")
+                    b.Property<string>("ProgramOrProject")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("ReceiptNo")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("RestrictedFlag")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("RiskRating")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("SourceVerified")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -243,6 +343,8 @@ namespace philcare.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DonorId");
+
+                    b.HasIndex("FundCode");
 
                     b.ToTable("Donations", (string)null);
                 });
@@ -259,6 +361,10 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -274,6 +380,11 @@ namespace philcare.Api.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(true);
 
+                    b.Property<string>("KydStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -282,9 +393,20 @@ namespace philcare.Api.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("PepFlag")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("Phone")
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("PrivacyConsent")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("RiskRating")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -310,17 +432,42 @@ namespace philcare.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("Amount")
+                    b.Property<string>("AdminEligibility")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<decimal>("AmountOriginal")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
+                    b.Property<decimal>("AmountPhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("ApprovalStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
                     b.Property<int?>("BeneficiaryCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("BeneficiaryType")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Description")
@@ -336,22 +483,57 @@ namespace philcare.Api.Migrations
                     b.Property<DateTime>("ExpenseDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("FundBucketId")
-                        .HasColumnType("int");
+                    b.Property<string>("ExpenseFunction")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("FundCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("FundingBucketCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<decimal>("FxRateToPhp")
+                        .HasPrecision(18, 6)
+                        .HasColumnType("decimal(18,6)");
 
                     b.Property<bool>("IsVoided")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
+                    b.Property<int?>("LinkedDonationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("PayeeVendor")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
                     b.Property<string>("PaymentMethod")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
-                    b.Property<string>("Reference")
+                    b.Property<string>("ProgramOrProject")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("ReceiptNo")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SupportingDocStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -365,12 +547,14 @@ namespace philcare.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FundBucketId");
+                    b.HasIndex("FundCode");
+
+                    b.HasIndex("FundingBucketCode");
 
                     b.ToTable("Expenses", (string)null);
                 });
 
-            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.FundBucket", b =>
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Fund", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -378,9 +562,10 @@ namespace philcare.Api.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("AdminAllocated")
-                        .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)");
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -388,27 +573,95 @@ namespace philcare.Api.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("FundType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                    b.Property<bool>("IsRestricted")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
-                    b.Property<decimal>("ProgramAllocated")
+                    b.Property<string>("PolicyNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<bool>("SeparateTrackingRequired")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UseCase")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("Funds", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.FundingBucket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("AllocatedAmount")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
-                    b.Property<decimal>("TotalExpensed")
+                    b.Property<string>("BucketType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal>("ExpensedAmount")
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
-                    b.Property<decimal>("TotalReceived")
-                        .HasPrecision(14, 2)
-                        .HasColumnType("decimal(14,2)");
+                    b.Property<string>("FundCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<decimal>("MaxAdminRate")
+                        .HasPrecision(5, 4)
+                        .HasColumnType("decimal(5,4)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("PolicyRule")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<bool>("SeparateTrackingRequired")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("TypicalUse")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -418,10 +671,72 @@ namespace philcare.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FundType")
+                    b.HasIndex("Code")
                         .IsUnique();
 
-                    b.ToTable("FundBuckets", (string)null);
+                    b.HasIndex("FundCode");
+
+                    b.ToTable("FundingBuckets", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.OpeningBalance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
+                    b.Property<string>("FundCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<decimal>("OpeningBalancePhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FundCode");
+
+                    b.HasIndex("Year", "FundCode")
+                        .IsUnique();
+
+                    b.ToTable("OpeningBalances", (string)null);
                 });
 
             modelBuilder.Entity("philcare.Api.Features.ReferenceData.Domain.LookupItem", b =>
@@ -489,20 +804,29 @@ namespace philcare.Api.Migrations
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Allocation", b =>
                 {
                     b.HasOne("philcare.Api.Features.Finance.Domain.Donation", "Donation")
-                        .WithOne("Allocation")
-                        .HasForeignKey("philcare.Api.Features.Finance.Domain.Allocation", "DonationId")
+                        .WithMany("Allocations")
+                        .HasForeignKey("DonationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Fund", "SourceFund")
+                        .WithMany()
+                        .HasForeignKey("SourceFundCode")
+                        .HasPrincipalKey("Code")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("philcare.Api.Features.Finance.Domain.FundBucket", "FundBucket")
+                    b.HasOne("philcare.Api.Features.Finance.Domain.FundingBucket", "TargetBucket")
                         .WithMany("Allocations")
-                        .HasForeignKey("FundBucketId")
+                        .HasForeignKey("TargetBucketCode")
+                        .HasPrincipalKey("Code")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Donation");
 
-                    b.Navigation("FundBucket");
+                    b.Navigation("SourceFund");
+
+                    b.Navigation("TargetBucket");
                 });
 
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Donation", b =>
@@ -513,18 +837,61 @@ namespace philcare.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Fund", "Fund")
+                        .WithMany()
+                        .HasForeignKey("FundCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Donor");
+
+                    b.Navigation("Fund");
                 });
 
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Expense", b =>
                 {
-                    b.HasOne("philcare.Api.Features.Finance.Domain.FundBucket", "FundBucket")
-                        .WithMany("Expenses")
-                        .HasForeignKey("FundBucketId")
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Fund", "Fund")
+                        .WithMany()
+                        .HasForeignKey("FundCode")
+                        .HasPrincipalKey("Code")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("FundBucket");
+                    b.HasOne("philcare.Api.Features.Finance.Domain.FundingBucket", "FundingBucket")
+                        .WithMany("Expenses")
+                        .HasForeignKey("FundingBucketCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Fund");
+
+                    b.Navigation("FundingBucket");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.FundingBucket", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Fund", "Fund")
+                        .WithMany("Buckets")
+                        .HasForeignKey("FundCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Fund");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.OpeningBalance", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Fund", "Fund")
+                        .WithMany()
+                        .HasForeignKey("FundCode")
+                        .HasPrincipalKey("Code")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Fund");
                 });
 
             modelBuilder.Entity("philcare.Api.Features.Auth.Domain.User", b =>
@@ -534,7 +901,7 @@ namespace philcare.Api.Migrations
 
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Donation", b =>
                 {
-                    b.Navigation("Allocation");
+                    b.Navigation("Allocations");
                 });
 
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Donor", b =>
@@ -542,7 +909,12 @@ namespace philcare.Api.Migrations
                     b.Navigation("Donations");
                 });
 
-            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.FundBucket", b =>
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.Fund", b =>
+                {
+                    b.Navigation("Buckets");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Finance.Domain.FundingBucket", b =>
                 {
                     b.Navigation("Allocations");
 

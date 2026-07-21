@@ -11,5 +11,7 @@ public sealed class CreateDonorValidator : AbstractValidator<CreateDonorRequest>
         RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrWhiteSpace(x.Email));
         RuleFor(x => x.Phone).MaximumLength(50);
         RuleFor(x => x.Address).MaximumLength(500);
+        RuleFor(x => x.Country).MaximumLength(100);
+        RuleFor(x => x.RiskRating).IsInEnum();
     }
 }

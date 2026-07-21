@@ -4,17 +4,14 @@ using philcare.Api.Common.Persistence;
 
 namespace philcare.Api.Features.Finance.Reports.GetFundSummary;
 
-public sealed record FundSummaryBucketResponse(
-    string FundType, decimal TotalReceived, decimal AdminAllocated, decimal ProgramAllocated,
-    decimal TotalExpensed, decimal Balance);
+public sealed record FundSummaryBucketRow(
+    string FundCode, string BucketCode, string BucketName, decimal AllocatedAmount, decimal ExpensedAmount, decimal Remaining);
 
 public sealed record FundSummaryResponse(
-    List<FundSummaryBucketResponse> Buckets,
-    decimal GrandTotalReceived,
-    decimal GrandTotalAdminAllocated,
-    decimal GrandTotalProgramAllocated,
+    List<FundSummaryBucketRow> Buckets,
+    decimal GrandTotalAllocated,
     decimal GrandTotalExpensed,
-    decimal GrandTotalBalance,
+    decimal GrandTotalRemaining,
     decimal OverallAdminRatio);
 
 public sealed class GetFundSummaryEndpoint : IEndpoint
@@ -23,22 +20,23 @@ public sealed class GetFundSummaryEndpoint : IEndpoint
     {
         app.MapGet("/api/reports/fund-summary", async (AppDbContext db, CancellationToken ct) =>
         {
-            var buckets = await db.FundBuckets
-                .OrderBy(b => b.FundType)
-                .Select(b => new FundSummaryBucketResponse(
-                    b.FundType, b.TotalReceived, b.AdminAllocated, b.ProgramAllocated, b.TotalExpensed,
-                    b.ProgramAllocated - b.TotalExpensed))
+            var buckets = await db.FundingBuckets
+                .OrderBy(b => b.FundCode).ThenBy(b => b.Code)
+                .Select(b => new FundSummaryBucketRow(
+                    b.FundCode, b.Code, b.Name, b.AllocatedAmount, b.ExpensedAmount, b.AllocatedAmount - b.ExpensedAmount))
                 .ToListAsync(ct);
 
-            var totalReceived = buckets.Sum(b => b.TotalReceived);
-            var totalAdmin = buckets.Sum(b => b.AdminAllocated);
-            var totalProgram = buckets.Sum(b => b.ProgramAllocated);
-            var totalExpensed = buckets.Sum(b => b.TotalExpensed);
-            var totalBalance = buckets.Sum(b => b.Balance);
-            var adminRatio = totalReceived == 0 ? 0 : Math.Round(totalAdmin / totalReceived, 4);
+            var totalAllocated = buckets.Sum(b => b.AllocatedAmount);
+            var totalExpensed = buckets.Sum(b => b.ExpensedAmount);
+            var totalRemaining = buckets.Sum(b => b.Remaining);
 
-            return Results.Ok(new FundSummaryResponse(
-                buckets, totalReceived, totalAdmin, totalProgram, totalExpensed, totalBalance, adminRatio));
+            var adminAllocated = await db.FundingBuckets
+                .Where(b => b.BucketType == Domain.BucketType.Admin)
+                .SumAsync(b => b.AllocatedAmount, ct);
+
+            var adminRatio = totalAllocated == 0 ? 0 : Math.Round(adminAllocated / totalAllocated, 4);
+
+            return Results.Ok(new FundSummaryResponse(buckets, totalAllocated, totalExpensed, totalRemaining, adminRatio));
         })
         .WithName("GetFundSummary")
         .WithTags("Reports")

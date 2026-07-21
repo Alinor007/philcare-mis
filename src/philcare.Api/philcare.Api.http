@@ -21,9 +21,25 @@ Authorization: Bearer {{token}}
 GET {{philcare.Api_HostAddress}}/api/lookups/fund_type
 Authorization: Bearer {{token}}
 
-### --- Finance module (Sprint 2) ---
+### --- Finance module ---
 
-### Create donor
+### List funds (master: ZAKA-FUND, SADA-FUND, GENE-FUND, REST-FUND, OPER-FUND, CAPX-FUND)
+GET {{philcare.Api_HostAddress}}/api/funds
+Authorization: Bearer {{token}}
+
+### List funding buckets (live balances)
+GET {{philcare.Api_HostAddress}}/api/funding-buckets
+Authorization: Bearer {{token}}
+
+### List funding buckets for one fund
+GET {{philcare.Api_HostAddress}}/api/funding-buckets?fundCode=ZAKA-FUND
+Authorization: Bearer {{token}}
+
+### Get funding bucket detail (replace {{bucketId}})
+GET {{philcare.Api_HostAddress}}/api/funding-buckets/{{bucketId}}
+Authorization: Bearer {{token}}
+
+### Create donor (with KYD/AML fields)
 POST {{philcare.Api_HostAddress}}/api/donors
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -31,60 +47,137 @@ Content-Type: application/json
 {
   "name": "Human Appeal Australia",
   "type": "Organization",
-  "email": "contact@humanappeal.org.au"
+  "email": "contact@humanappeal.org.au",
+  "country": "Australia",
+  "riskRating": "Low",
+  "pepFlag": false,
+  "privacyConsent": true
 }
 
 ### List donors
 GET {{philcare.Api_HostAddress}}/api/donors
 Authorization: Bearer {{token}}
 
-### Create zakat donation (auto-allocates program/admin/amil)
+### Get donor detail (replace {{donorId}})
+GET {{philcare.Api_HostAddress}}/api/donors/{{donorId}}
+Authorization: Bearer {{token}}
+
+### Update donor (e.g. clear KYD after review)
+PUT {{philcare.Api_HostAddress}}/api/donors/{{donorId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Human Appeal Australia",
+  "type": "Organization",
+  "email": "contact@humanappeal.org.au",
+  "country": "Australia",
+  "isActive": true,
+  "kydStatus": "Cleared",
+  "riskRating": "Low",
+  "pepFlag": false,
+  "privacyConsent": true
+}
+
+### Create zakat donation — auto-splits into ZAK-PROG (program) + ZAK-AMIL (12.5% cap)
 POST {{philcare.Api_HostAddress}}/api/donations
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "donorId": 1,
-  "amount": 10000,
+  "amountOriginal": 10000,
   "currency": "PHP",
-  "fundType": "ZAKAT",
-  "receivedDate": "2026-07-20T00:00:00Z",
-  "paymentMethod": "BANK_TRANSFER",
+  "fxRateToPhp": 1,
+  "dateReceived": "2026-07-20T00:00:00Z",
+  "channel": "Bank Transfer",
+  "fundCode": "ZAKA-FUND",
   "adminAllowed": true,
-  "adminRate": 0.15,
-  "amilRate": 0.125
+  "adminRateInput": 0.125
 }
 
-### List fund buckets (live balances)
-GET {{philcare.Api_HostAddress}}/api/fund-buckets
+### Create foreign-currency general donation — auto-converts to PHP, splits program/admin (cap 15%)
+POST {{philcare.Api_HostAddress}}/api/donations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "donorId": 1,
+  "amountOriginal": 100,
+  "currency": "USD",
+  "fxRateToPhp": 58,
+  "dateReceived": "2026-07-20T00:00:00Z",
+  "channel": "Bank Transfer",
+  "fundCode": "GENE-FUND",
+  "adminAllowed": true,
+  "adminRateInput": 0.15
+}
+
+### List donations (filters: donorId, fundCode, from, to, includeVoided)
+GET {{philcare.Api_HostAddress}}/api/donations
 Authorization: Bearer {{token}}
 
-### Create zakat expense (requires zakatAsnaf + beneficiaryCount)
+### Get donation detail incl. allocation lines (replace {{donationId}})
+GET {{philcare.Api_HostAddress}}/api/donations/{{donationId}}
+Authorization: Bearer {{token}}
+
+### Void donation (Admin only; blocked if its funds are already spent)
+DELETE {{philcare.Api_HostAddress}}/api/donations/{{donationId}}
+Authorization: Bearer {{token}}
+
+### Create zakat expense (requires zakatAsnaf + beneficiaryCount against ZAK-PROG)
 POST {{philcare.Api_HostAddress}}/api/expenses
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "fundBucketId": 1,
-  "amount": 2000,
-  "expenseCategory": "RELIEF_DISTRIBUTION",
-  "paymentMethod": "CASH",
   "expenseDate": "2026-07-20T00:00:00Z",
+  "payeeVendor": "Local Relief Committee",
+  "expenseCategory": "RELIEF_DISTRIBUTION",
   "description": "Relief goods distribution",
+  "paymentMethod": "CASH",
+  "amountOriginal": 2000,
+  "currency": "PHP",
+  "fxRateToPhp": 1,
+  "fundingBucketCode": "ZAK-PROG",
   "zakatAsnaf": "FUQARA",
   "beneficiaryCount": 40
 }
 
-### Fund summary report
+### List expenses (filters: fundingBucketCode, expenseCategory, from, to, includeVoided)
+GET {{philcare.Api_HostAddress}}/api/expenses
+Authorization: Bearer {{token}}
+
+### Get expense detail (replace {{expenseId}})
+GET {{philcare.Api_HostAddress}}/api/expenses/{{expenseId}}
+Authorization: Bearer {{token}}
+
+### Void expense (Admin only; restores bucket balance)
+DELETE {{philcare.Api_HostAddress}}/api/expenses/{{expenseId}}
+Authorization: Bearer {{token}}
+
+### Fund summary report — every bucket's allocated/expensed/remaining + overall admin ratio
 GET {{philcare.Api_HostAddress}}/api/reports/fund-summary
 Authorization: Bearer {{token}}
 
-### Zakat asnaf report
+### Admin recovery control report — per admin/amil bucket cap vs allocated vs expensed
+GET {{philcare.Api_HostAddress}}/api/reports/admin-recovery
+Authorization: Bearer {{token}}
+
+### Zakat & Amil control report
+GET {{philcare.Api_HostAddress}}/api/reports/zakat-amil
+Authorization: Bearer {{token}}
+
+### Zakat asnaf report — amounts + beneficiary counts by the 8 asnaf categories
 GET {{philcare.Api_HostAddress}}/api/reports/zakat-asnaf
 Authorization: Bearer {{token}}
 
-### Donor utilization report
-GET {{philcare.Api_HostAddress}}/api/reports/donor-utilization/1
+### Donor utilization report (replace {{donorId}})
+GET {{philcare.Api_HostAddress}}/api/reports/donor-utilization/{{donorId}}
+Authorization: Bearer {{token}}
+
+### Restricted fund ledger — opening balance + movements for ZAKA-FUND / REST-FUND / CAPX-FUND
+GET {{philcare.Api_HostAddress}}/api/reports/restricted-ledger?year=2026
 Authorization: Bearer {{token}}
 
 ###

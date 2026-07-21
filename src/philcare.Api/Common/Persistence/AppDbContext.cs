@@ -11,10 +11,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<LookupItem> LookupItems => Set<LookupItem>();
 
-    // Finance — Sprint 2
+    // Finance
+    public DbSet<Fund> Funds => Set<Fund>();
+    public DbSet<FundingBucket> FundingBuckets => Set<FundingBucket>();
+    public DbSet<OpeningBalance> OpeningBalances => Set<OpeningBalance>();
     public DbSet<Donor> Donors => Set<Donor>();
     public DbSet<Donation> Donations => Set<Donation>();
-    public DbSet<FundBucket> FundBuckets => Set<FundBucket>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<Expense> Expenses => Set<Expense>();
 

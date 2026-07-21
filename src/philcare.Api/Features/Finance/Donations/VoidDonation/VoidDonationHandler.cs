@@ -9,8 +9,8 @@ public sealed class VoidDonationHandler(AppDbContext db)
     public async Task<Result> HandleAsync(int id, CancellationToken cancellationToken)
     {
         var donation = await db.Donations
-            .Include(d => d.Allocation)
-            .ThenInclude(a => a!.FundBucket)
+            .Include(d => d.Allocations)
+            .ThenInclude(a => a.TargetBucket)
             .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
         if (donation is null)
@@ -23,23 +23,22 @@ public sealed class VoidDonationHandler(AppDbContext db)
             return Result.Failure(Error.Conflict("Donations.AlreadyVoided", "This donation has already been voided."));
         }
 
-        var allocation = donation.Allocation;
-
-        if (allocation is not null)
+        foreach (var allocation in donation.Allocations)
         {
-            var bucket = allocation.FundBucket;
-            var remainingProgramAllocated = bucket.ProgramAllocated - allocation.ProgramAmount;
+            var bucket = allocation.TargetBucket;
+            var remainingAfterVoid = bucket.AllocatedAmount - allocation.AllocatedAmountPhp;
 
-            if (remainingProgramAllocated < bucket.TotalExpensed)
+            if (remainingAfterVoid < bucket.ExpensedAmount)
             {
                 return Result.Failure(Error.Validation(
                     "Donations.FundsAlreadySpent",
-                    "Cannot void this donation because its funds have already been spent from the bucket."));
+                    $"Cannot void this donation because bucket '{bucket.Code}' has already spent funds from this allocation."));
             }
+        }
 
-            bucket.TotalReceived -= donation.Amount;
-            bucket.AdminAllocated -= allocation.AdminAmount;
-            bucket.ProgramAllocated -= allocation.ProgramAmount;
+        foreach (var allocation in donation.Allocations)
+        {
+            allocation.TargetBucket.AllocatedAmount -= allocation.AllocatedAmountPhp;
         }
 
         donation.IsVoided = true;

@@ -3,9 +3,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using philcare.Api.Features.Finance.Domain;
 using philcare.Api.Features.Finance.Donations.CreateDonation;
 using philcare.Api.Features.Finance.Donors.CreateDonor;
-using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Test.Common;
 using Xunit;
 
@@ -44,7 +44,10 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         var response = await _client.PostAsJsonAsync("/api/donors", new
         {
             Name = name,
-            Type = "Individual"
+            Type = "Individual",
+            RiskRating = "Low",
+            PepFlag = false,
+            PrivacyConsent = true
         });
 
         response.EnsureSuccessStatusCode();
@@ -58,21 +61,21 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         var response = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = 1,
-            Amount = 100,
+            AmountOriginal = 100m,
             Currency = "PHP",
-            FundType = "SADAQAH",
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
             AdminAllowed = false,
-            AdminRate = 0,
-            AmilRate = 0
+            AdminRateInput = 0m
         });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
-    public async Task CreateDonation_Zakat_SplitsAllocationCorrectly()
+    public async Task CreateDonation_Zakat_SplitsIntoProgramAndAmil()
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
@@ -80,26 +83,29 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         var response = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = donorId,
-            Amount = 10000m,
+            AmountOriginal = 10000m,
             Currency = "PHP",
-            FundType = "ZAKAT",
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "ZAKA-FUND",
             AdminAllowed = true,
-            AdminRate = 0.15m,
-            AmilRate = 0.125m
+            AdminRateInput = 0.125m // the zakat amil bucket caps at 12.5%
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var donation = await response.Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
 
-        Assert.Equal(1500m, donation!.Allocation.AdminAmount);
-        Assert.Equal(1250m, donation.Allocation.AmilAmount);
-        Assert.Equal(7250m, donation.Allocation.ProgramAmount);
+        Assert.Equal(10000m, donation!.AmountPhp);
+        Assert.Equal(1250m, donation.AdminAllocationPhp);
+        Assert.Equal(8750m, donation.ProgramAllocationPhp);
+        Assert.Equal(2, donation.Allocations.Count);
+        Assert.Contains(donation.Allocations, a => a.AllocationType == AllocationType.Amil && a.AllocatedAmountPhp == 1250m);
+        Assert.Contains(donation.Allocations, a => a.AllocationType == AllocationType.Program && a.AllocatedAmountPhp == 8750m);
     }
 
     [Fact]
-    public async Task CreateDonation_AdminRateAboveCap_ReturnsBadRequest()
+    public async Task CreateDonation_ForeignCurrency_ConvertsToPhp()
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
@@ -107,16 +113,43 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         var response = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = donorId,
-            Amount = 1000m,
-            Currency = "PHP",
-            FundType = "SADAQAH",
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
-            AdminAllowed = true,
-            AdminRate = 0.20m,
-            AmilRate = 0m
+            AmountOriginal = 100m,
+            Currency = "USD",
+            FxRateToPhp = 58m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "GENE-FUND",
+            AdminAllowed = false,
+            AdminRateInput = 0m
         });
 
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var donation = await response.Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
+
+        Assert.Equal(5800m, donation!.AmountPhp);
+        Assert.Equal(5800m, donation.ProgramAllocationPhp);
+    }
+
+    [Fact]
+    public async Task CreateDonation_AdminRateAboveBucketCap_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        var response = await _client.PostAsJsonAsync("/api/donations", new
+        {
+            DonorId = donorId,
+            AmountOriginal = 1000m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "GENE-FUND", // admin bucket caps at 15%
+            AdminAllowed = true,
+            AdminRateInput = 0.20m
+        });
+
+        // FluentValidation also rejects >15% globally, but the assertion holds either way.
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -125,69 +158,70 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
-        var fundType = $"TESTFUND-{Guid.NewGuid():N}"[..20];
 
         var donationResponse = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = donorId,
-            Amount = 100m,
+            AmountOriginal = 100m,
             Currency = "PHP",
-            FundType = fundType,
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
             AdminAllowed = false,
-            AdminRate = 0m,
-            AmilRate = 0m
+            AdminRateInput = 0m
         });
         donationResponse.EnsureSuccessStatusCode();
 
-        var bucketId = await GetBucketIdForFundTypeAsync(fundType);
-
         var expenseResponse = await _client.PostAsJsonAsync("/api/expenses", new
         {
-            FundBucketId = bucketId,
-            Amount = 999_999_999m,
-            ExpenseCategory = "PROGRAM",
-            PaymentMethod = "CASH",
             ExpenseDate = DateTime.UtcNow,
-            Description = "Way more than the bucket holds"
+            PayeeVendor = "Test Vendor",
+            ExpenseCategory = "PROGRAM",
+            Description = "Way more than the bucket holds",
+            PaymentMethod = "CASH",
+            AmountOriginal = 999_999_999m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            FundingBucketCode = "SADA-PROG"
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, expenseResponse.StatusCode);
     }
 
     [Fact]
-    public async Task CreateExpense_ZakatBucketWithoutAsnaf_ReturnsBadRequest()
+    public async Task CreateExpense_ZakatProgramBucketWithoutAsnaf_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
 
-        // Fund the shared ZAKAT bucket generously so this test's tiny expense
+        // Fund the shared ZAK-PROG bucket generously so this test's tiny expense
         // never trips the balance check, regardless of other tests' state.
         var donationResponse = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = donorId,
-            Amount = 500_000m,
+            AmountOriginal = 500_000m,
             Currency = "PHP",
-            FundType = "ZAKAT",
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "ZAKA-FUND",
             AdminAllowed = false,
-            AdminRate = 0m,
-            AmilRate = 0m
+            AdminRateInput = 0m
         });
         donationResponse.EnsureSuccessStatusCode();
 
-        var bucketId = await GetBucketIdForFundTypeAsync("ZAKAT");
-
         var expenseResponse = await _client.PostAsJsonAsync("/api/expenses", new
         {
-            FundBucketId = bucketId,
-            Amount = 1m,
-            ExpenseCategory = "RELIEF",
-            PaymentMethod = "CASH",
             ExpenseDate = DateTime.UtcNow,
-            Description = "Missing zakat asnaf"
+            PayeeVendor = "Test Vendor",
+            ExpenseCategory = "RELIEF",
+            Description = "Missing zakat asnaf",
+            PaymentMethod = "CASH",
+            AmountOriginal = 1m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            FundingBucketCode = "ZAK-PROG"
         });
 
         Assert.Equal(HttpStatusCode.BadRequest, expenseResponse.StatusCode);
@@ -198,33 +232,35 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
-        var fundType = $"TESTFUND-{Guid.NewGuid():N}"[..20];
 
+        // CAPX-FUND is not touched by any other test, so its single bucket is
+        // guaranteed pristine here regardless of test execution order.
         var donationResponse = await _client.PostAsJsonAsync("/api/donations", new
         {
             DonorId = donorId,
-            Amount = 5000m,
+            AmountOriginal = 5000m,
             Currency = "PHP",
-            FundType = fundType,
-            ReceivedDate = DateTime.UtcNow,
-            PaymentMethod = "CASH",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "CAPX-FUND",
             AdminAllowed = false,
-            AdminRate = 0m,
-            AmilRate = 0m
+            AdminRateInput = 0m
         });
         donationResponse.EnsureSuccessStatusCode();
         var donation = await donationResponse.Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
 
-        var bucketId = await GetBucketIdForFundTypeAsync(fundType);
-
         var expenseResponse = await _client.PostAsJsonAsync("/api/expenses", new
         {
-            FundBucketId = bucketId,
-            Amount = 5000m,
-            ExpenseCategory = "PROGRAM",
-            PaymentMethod = "CASH",
             ExpenseDate = DateTime.UtcNow,
-            Description = "Spends the entire donation"
+            PayeeVendor = "Test Vendor",
+            ExpenseCategory = "CAPEX",
+            Description = "Spends the entire donation",
+            PaymentMethod = "CASH",
+            AmountOriginal = 5000m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            FundingBucketCode = "CAPX-FUND"
         });
         expenseResponse.EnsureSuccessStatusCode();
 
@@ -233,15 +269,24 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, voidResponse.StatusCode);
     }
 
-    private async Task<int> GetBucketIdForFundTypeAsync(string fundType)
+    [Fact]
+    public async Task GetAdminRecoveryReport_ReturnsRowPerAdminBucket()
     {
-        var response = await _client.GetAsync("/api/fund-buckets");
+        await AuthenticateAsAdminAsync();
+
+        var response = await _client.GetAsync("/api/reports/admin-recovery");
         response.EnsureSuccessStatusCode();
-        var buckets = await response.Content.ReadFromJsonAsync<List<FundBucketDto>>(JsonOptions);
-        return buckets!.First(b => string.Equals(b.FundType, fundType, StringComparison.OrdinalIgnoreCase)).Id;
+
+        var report = await response.Content.ReadFromJsonAsync<AdminRecoveryReportDto>(JsonOptions);
+
+        // Seeded admin/amil buckets: ZAK-AMIL, REST-ADMIN, GENE-ADMIN, SADA-ADMIN.
+        Assert.Contains(report!.Buckets, b => b.BucketCode == "ZAK-AMIL" && b.PolicyCapRate == 0.125m);
+        Assert.Contains(report.Buckets, b => b.BucketCode == "GENE-ADMIN" && b.PolicyCapRate == 0.15m);
     }
 
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
-    private sealed record FundBucketDto(int Id, string Name, string FundType, decimal TotalReceived, decimal AdminAllocated, decimal ProgramAllocated, decimal TotalExpensed, decimal Balance);
+    private sealed record AdminRecoveryRowDto(string BucketCode, decimal PolicyCapRate);
+
+    private sealed record AdminRecoveryReportDto(List<AdminRecoveryRowDto> Buckets);
 }

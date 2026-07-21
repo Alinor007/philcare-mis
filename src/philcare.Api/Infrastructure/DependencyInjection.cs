@@ -40,7 +40,8 @@ public static class DependencyInjection
 
             if (useInMemory)
             {
-                options.UseInMemoryDatabase("PhilCareMisTests");
+                var databaseName = configuration["Persistence:InMemoryDatabaseName"] ?? "PhilCareMisTests";
+                options.UseInMemoryDatabase(databaseName);
             }
             else
             {

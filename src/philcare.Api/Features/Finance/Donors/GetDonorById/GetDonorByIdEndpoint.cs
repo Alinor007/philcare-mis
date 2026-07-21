@@ -6,7 +6,8 @@ using philcare.Api.Features.Finance.Domain;
 namespace philcare.Api.Features.Finance.Donors.GetDonorById;
 
 public sealed record DonorDetailResponse(
-    int Id, string Name, DonorType Type, string? Email, string? Phone, string? Address, string? Notes, bool IsActive);
+    int Id, string Name, DonorType Type, string? Email, string? Phone, string? Address, string? Country, string? Notes,
+    bool IsActive, KydStatus KydStatus, RiskRating RiskRating, bool PepFlag, bool PrivacyConsent);
 
 public sealed class GetDonorByIdEndpoint : IEndpoint
 {
@@ -16,7 +17,9 @@ public sealed class GetDonorByIdEndpoint : IEndpoint
         {
             var donor = await db.Donors
                 .Where(d => d.Id == id)
-                .Select(d => new DonorDetailResponse(d.Id, d.Name, d.Type, d.Email, d.Phone, d.Address, d.Notes, d.IsActive))
+                .Select(d => new DonorDetailResponse(
+                    d.Id, d.Name, d.Type, d.Email, d.Phone, d.Address, d.Country, d.Notes,
+                    d.IsActive, d.KydStatus, d.RiskRating, d.PepFlag, d.PrivacyConsent))
                 .FirstOrDefaultAsync(ct);
 
             if (donor is null)

@@ -8,7 +8,11 @@ public sealed record CreateDonorRequest(
     string? Email,
     string? Phone,
     string? Address,
-    string? Notes);
+    string? Country,
+    string? Notes,
+    RiskRating RiskRating,
+    bool PepFlag,
+    bool PrivacyConsent);
 
 public sealed record CreateDonorResponse(
     int Id,
@@ -17,5 +21,10 @@ public sealed record CreateDonorResponse(
     string? Email,
     string? Phone,
     string? Address,
+    string? Country,
     string? Notes,
-    bool IsActive);
+    bool IsActive,
+    KydStatus KydStatus,
+    RiskRating RiskRating,
+    bool PepFlag,
+    bool PrivacyConsent);

@@ -24,9 +24,20 @@ public class DonorConfiguration : IEntityTypeConfiguration<Donor>
         builder.Property(d => d.Email).HasMaxLength(256);
         builder.Property(d => d.Phone).HasMaxLength(50);
         builder.Property(d => d.Address).HasMaxLength(500);
+        builder.Property(d => d.Country).HasMaxLength(100);
 
         builder.Property(d => d.IsActive)
             .HasDefaultValue(true);
+
+        builder.Property(d => d.KydStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(d => d.RiskRating)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
 
         builder.HasMany(d => d.Donations)
             .WithOne(don => don.Donor)

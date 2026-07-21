@@ -22,81 +22,128 @@ public sealed class CreateDonationHandler(AppDbContext db)
                 Error.Validation("Donations.DonorInactive", "Cannot record a donation for an inactive donor."));
         }
 
-        var isZakat = string.Equals(request.FundType, FinanceRules.ZakatFundType, StringComparison.OrdinalIgnoreCase);
+        var fund = await db.Funds.FirstOrDefaultAsync(f => f.Code == request.FundCode, cancellationToken);
 
-        if (request.AdminRate > FinanceRules.MaxAdminRate)
+        if (fund is null)
         {
-            return Result.Failure<CreateDonationResponse>(
-                Error.Validation("Donations.AdminRateExceeded", $"Admin rate cannot exceed {FinanceRules.MaxAdminRate:P1}."));
+            return Result.Failure<CreateDonationResponse>(Error.NotFound("Donations.FundNotFound", "Fund not found."));
         }
 
-        if (!isZakat && request.AmilRate > 0)
+        var buckets = await db.FundingBuckets.Where(b => b.FundCode == fund.Code).ToListAsync(cancellationToken);
+        var programBucket = buckets.FirstOrDefault(b => b.BucketType == BucketType.Program) ?? buckets.FirstOrDefault();
+        var adminBucket = buckets.FirstOrDefault(b => b.BucketType == BucketType.Admin);
+
+        if (programBucket is null)
         {
             return Result.Failure<CreateDonationResponse>(
-                Error.Validation("Donations.AmilNotAllowed", "Amil rate is only allowed for zakat donations."));
+                Error.Failure("Donations.NoBucketConfigured", "This fund has no funding bucket configured."));
         }
 
-        if (request.AmilRate > FinanceRules.MaxAmilRate)
+        if (request.AdminAllowed && adminBucket is null)
         {
             return Result.Failure<CreateDonationResponse>(
-                Error.Validation("Donations.AmilRateExceeded", $"Amil rate cannot exceed {FinanceRules.MaxAmilRate:P1}."));
+                Error.Validation("Donations.NoAdminBucket", "This fund has no admin/amil bucket configured; admin allocation is not allowed."));
         }
 
-        var adminAmount = request.AdminAllowed ? Math.Round(request.Amount * request.AdminRate, 2) : 0m;
-        var amilAmount = isZakat ? Math.Round(request.Amount * request.AmilRate, 2) : 0m;
-        var programAmount = request.Amount - adminAmount - amilAmount;
+        var adminRateCap = adminBucket?.MaxAdminRate ?? 0m;
+
+        if (request.AdminRateInput > adminRateCap)
+        {
+            return Result.Failure<CreateDonationResponse>(
+                Error.Validation("Donations.AdminRateExceeded", $"Admin rate cannot exceed the bucket cap of {adminRateCap:P1}."));
+        }
+
+        var amountPhp = Math.Round(request.AmountOriginal * request.FxRateToPhp, 2);
+        var adminRateApplied = request.AdminAllowed ? request.AdminRateInput : 0m;
+        var adminAmount = Math.Round(amountPhp * adminRateApplied, 2);
+        var programAmount = amountPhp - adminAmount;
 
         var donation = new Donation
         {
             DonorId = donor.Id,
-            Amount = request.Amount,
+            AmountOriginal = request.AmountOriginal,
             Currency = request.Currency,
-            FundType = request.FundType,
-            ReceivedDate = request.ReceivedDate,
-            PaymentMethod = request.PaymentMethod,
+            FxRateToPhp = request.FxRateToPhp,
+            AmountPhp = amountPhp,
+            DateReceived = request.DateReceived,
+            Channel = request.Channel,
+            Purpose = request.Purpose,
+            RestrictedFlag = request.RestrictedFlag,
+            ProgramOrProject = request.ProgramOrProject,
+            FundCode = fund.Code,
+            ReceiptNo = request.ReceiptNo,
+            CashDocumentationStatus = request.CashDocumentationStatus,
+            SourceVerified = request.SourceVerified,
+            KydStatus = donor.KydStatus,
+            RiskRating = donor.RiskRating,
             AdminAllowed = request.AdminAllowed,
-            AdminRate = request.AdminRate,
-            AmilRate = request.AmilRate,
-            Reference = request.Reference,
+            AdminRateInput = request.AdminRateInput,
+            AdminRateCap = adminRateCap,
+            AdminRateApplied = adminRateApplied,
+            ProgramAllocationPhp = programAmount,
+            AdminAllocationPhp = adminAmount,
+            ProgramBucketCode = programBucket.Code,
+            AdminBucketCode = adminAmount > 0 ? adminBucket!.Code : null,
+            AllocationStatus = "OK",
             Notes = request.Notes,
             IsVoided = false
         };
 
         db.Donations.Add(donation);
 
-        var bucket = await db.FundBuckets.FirstOrDefaultAsync(b => b.FundType == request.FundType, cancellationToken);
+        var isZakat = string.Equals(fund.Code, FinanceRules.ZakatFundCode, StringComparison.OrdinalIgnoreCase);
+        var reportingYear = request.DateReceived.Year;
 
-        if (bucket is null)
+        var programAllocation = new Allocation
         {
-            bucket = new FundBucket
-            {
-                Name = $"{request.FundType} Fund",
-                FundType = request.FundType
-            };
-            db.FundBuckets.Add(bucket);
-        }
-
-        bucket.TotalReceived += request.Amount;
-        bucket.AdminAllocated += adminAmount;
-        bucket.ProgramAllocated += programAmount;
-
-        var allocation = new Allocation
-        {
+            AllocationDate = request.DateReceived,
             Donation = donation,
-            FundBucket = bucket,
-            ProgramAmount = programAmount,
-            AdminAmount = adminAmount,
-            AmilAmount = amilAmount
+            SourceFundCode = fund.Code,
+            GrossAmountPhp = amountPhp,
+            AllocationType = AllocationType.Program,
+            AllocationRate = amountPhp == 0 ? 0 : Math.Round(programAmount / amountPhp, 4),
+            AllocatedAmountPhp = programAmount,
+            TargetBucketCode = programBucket.Code,
+            ReportingYear = reportingYear,
+            PolicyCap = 0,
+            Status = "OK"
         };
 
-        db.Allocations.Add(allocation);
+        db.Allocations.Add(programAllocation);
+        programBucket.AllocatedAmount += programAmount;
+
+        if (adminAmount > 0)
+        {
+            var adminAllocation = new Allocation
+            {
+                AllocationDate = request.DateReceived,
+                Donation = donation,
+                SourceFundCode = fund.Code,
+                GrossAmountPhp = amountPhp,
+                AllocationType = isZakat ? AllocationType.Amil : AllocationType.Admin,
+                AllocationRate = adminRateApplied,
+                AllocatedAmountPhp = adminAmount,
+                TargetBucketCode = adminBucket!.Code,
+                ReportingYear = reportingYear,
+                PolicyCap = adminRateCap,
+                Status = "OK"
+            };
+
+            db.Allocations.Add(adminAllocation);
+            adminBucket.AllocatedAmount += adminAmount;
+        }
 
         await db.SaveChangesAsync(cancellationToken);
 
+        var allocationLines = donation.Allocations
+            .Select(a => new AllocationLineResponse(a.AllocationType, a.TargetBucketCode, a.AllocationRate, a.AllocatedAmountPhp))
+            .ToList();
+
         return Result.Success(new CreateDonationResponse(
-            donation.Id, donation.DonorId, donation.Amount, donation.Currency, donation.FundType, donation.ReceivedDate,
-            donation.PaymentMethod, donation.AdminAllowed, donation.AdminRate, donation.AmilRate, donation.Reference,
-            donation.Notes, donation.IsVoided,
-            new AllocationResponse(allocation.ProgramAmount, allocation.AdminAmount, allocation.AmilAmount)));
+            donation.Id, donation.DonorId, donation.AmountOriginal, donation.Currency, donation.FxRateToPhp, donation.AmountPhp,
+            donation.DateReceived, donation.Channel, donation.Purpose, donation.RestrictedFlag, donation.ProgramOrProject,
+            donation.FundCode, donation.ReceiptNo, donation.AdminAllowed, donation.AdminRateInput, donation.AdminRateCap,
+            donation.AdminRateApplied, donation.ProgramAllocationPhp, donation.AdminAllocationPhp, donation.ProgramBucketCode,
+            donation.AdminBucketCode, donation.AllocationStatus, donation.IsVoided, allocationLines));
     }
 }

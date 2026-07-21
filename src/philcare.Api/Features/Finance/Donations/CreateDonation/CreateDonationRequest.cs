@@ -1,32 +1,50 @@
+using philcare.Api.Features.Finance.Domain;
+
 namespace philcare.Api.Features.Finance.Donations.CreateDonation;
 
 public sealed record CreateDonationRequest(
     int DonorId,
-    decimal Amount,
+    decimal AmountOriginal,
     string Currency,
-    string FundType,
-    DateTime ReceivedDate,
-    string PaymentMethod,
+    decimal FxRateToPhp,
+    DateTime DateReceived,
+    string Channel,
+    string? Purpose,
+    bool RestrictedFlag,
+    string? ProgramOrProject,
+    string FundCode,
+    string? ReceiptNo,
+    string? CashDocumentationStatus,
+    bool SourceVerified,
     bool AdminAllowed,
-    decimal AdminRate,
-    decimal AmilRate,
-    string? Reference,
+    decimal AdminRateInput,
     string? Notes);
 
-public sealed record AllocationResponse(decimal ProgramAmount, decimal AdminAmount, decimal AmilAmount);
+public sealed record AllocationLineResponse(
+    AllocationType AllocationType, string TargetBucketCode, decimal AllocationRate, decimal AllocatedAmountPhp);
 
 public sealed record CreateDonationResponse(
     int Id,
     int DonorId,
-    decimal Amount,
+    decimal AmountOriginal,
     string Currency,
-    string FundType,
-    DateTime ReceivedDate,
-    string PaymentMethod,
+    decimal FxRateToPhp,
+    decimal AmountPhp,
+    DateTime DateReceived,
+    string Channel,
+    string? Purpose,
+    bool RestrictedFlag,
+    string? ProgramOrProject,
+    string FundCode,
+    string? ReceiptNo,
     bool AdminAllowed,
-    decimal AdminRate,
-    decimal AmilRate,
-    string? Reference,
-    string? Notes,
+    decimal AdminRateInput,
+    decimal AdminRateCap,
+    decimal AdminRateApplied,
+    decimal ProgramAllocationPhp,
+    decimal AdminAllocationPhp,
+    string? ProgramBucketCode,
+    string? AdminBucketCode,
+    string AllocationStatus,
     bool IsVoided,
-    AllocationResponse Allocation);
+    List<AllocationLineResponse> Allocations);

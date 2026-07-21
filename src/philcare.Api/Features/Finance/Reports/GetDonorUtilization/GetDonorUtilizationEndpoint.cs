@@ -4,10 +4,10 @@ using philcare.Api.Common.Persistence;
 
 namespace philcare.Api.Features.Finance.Reports.GetDonorUtilization;
 
-public sealed record DonorUtilizationFundTypeRow(
-    string FundType, int DonationCount, decimal TotalAmount, decimal ProgramAmount, decimal AdminAmount, decimal AmilAmount);
+public sealed record DonorUtilizationFundRow(
+    string FundCode, int DonationCount, decimal TotalAmountPhp, decimal ProgramAmountPhp, decimal AdminAmountPhp);
 
-public sealed record DonorUtilizationResponse(int DonorId, string DonorName, List<DonorUtilizationFundTypeRow> FundTypes);
+public sealed record DonorUtilizationResponse(int DonorId, string DonorName, List<DonorUtilizationFundRow> Funds);
 
 public sealed class GetDonorUtilizationEndpoint : IEndpoint
 {
@@ -26,22 +26,21 @@ public sealed class GetDonorUtilizationEndpoint : IEndpoint
                 .Where(d => d.DonorId == donorId && !d.IsVoided)
                 .Select(d => new
                 {
-                    d.FundType,
-                    d.Amount,
-                    ProgramAmount = d.Allocation != null ? d.Allocation.ProgramAmount : 0,
-                    AdminAmount = d.Allocation != null ? d.Allocation.AdminAmount : 0,
-                    AmilAmount = d.Allocation != null ? d.Allocation.AmilAmount : 0
+                    d.FundCode,
+                    d.AmountPhp,
+                    d.ProgramAllocationPhp,
+                    d.AdminAllocationPhp
                 })
                 .ToListAsync(ct);
 
-            var fundTypes = donations
-                .GroupBy(d => d.FundType)
-                .Select(g => new DonorUtilizationFundTypeRow(
-                    g.Key, g.Count(), g.Sum(d => d.Amount), g.Sum(d => d.ProgramAmount), g.Sum(d => d.AdminAmount), g.Sum(d => d.AmilAmount)))
-                .OrderBy(r => r.FundType)
+            var funds = donations
+                .GroupBy(d => d.FundCode)
+                .Select(g => new DonorUtilizationFundRow(
+                    g.Key, g.Count(), g.Sum(d => d.AmountPhp), g.Sum(d => d.ProgramAllocationPhp), g.Sum(d => d.AdminAllocationPhp)))
+                .OrderBy(r => r.FundCode)
                 .ToList();
 
-            return Results.Ok(new DonorUtilizationResponse(donor.Id, donor.Name, fundTypes));
+            return Results.Ok(new DonorUtilizationResponse(donor.Id, donor.Name, funds));
         })
         .WithName("GetDonorUtilization")
         .WithTags("Reports")

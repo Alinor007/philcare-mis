@@ -1,27 +1,34 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Api;
 using philcare.Api.Common.Persistence;
+using philcare.Api.Features.Finance.Domain;
 
 namespace philcare.Api.Features.Finance.Donations.GetDonationById;
 
-public sealed record DonationAllocationResponse(decimal ProgramAmount, decimal AdminAmount, decimal AmilAmount);
+public sealed record DonationAllocationLineResponse(
+    AllocationType AllocationType, string TargetBucketCode, decimal AllocationRate, decimal AllocatedAmountPhp);
 
 public sealed record DonationDetailResponse(
     int Id,
     int DonorId,
     string DonorName,
-    decimal Amount,
+    decimal AmountOriginal,
     string Currency,
-    string FundType,
-    DateTime ReceivedDate,
-    string PaymentMethod,
+    decimal FxRateToPhp,
+    decimal AmountPhp,
+    string FundCode,
+    DateTime DateReceived,
+    string Channel,
+    string? Purpose,
     bool AdminAllowed,
-    decimal AdminRate,
-    decimal AmilRate,
-    string? Reference,
+    decimal AdminRateInput,
+    decimal AdminRateCap,
+    decimal AdminRateApplied,
+    decimal ProgramAllocationPhp,
+    decimal AdminAllocationPhp,
     string? Notes,
     bool IsVoided,
-    DonationAllocationResponse? Allocation);
+    List<DonationAllocationLineResponse> Allocations);
 
 public sealed class GetDonationByIdEndpoint : IEndpoint
 {
@@ -31,7 +38,7 @@ public sealed class GetDonationByIdEndpoint : IEndpoint
         {
             var donation = await db.Donations
                 .Include(d => d.Donor)
-                .Include(d => d.Allocation)
+                .Include(d => d.Allocations)
                 .FirstOrDefaultAsync(d => d.Id == id, ct);
 
             if (donation is null)
@@ -40,12 +47,13 @@ public sealed class GetDonationByIdEndpoint : IEndpoint
             }
 
             var response = new DonationDetailResponse(
-                donation.Id, donation.DonorId, donation.Donor.Name, donation.Amount, donation.Currency, donation.FundType,
-                donation.ReceivedDate, donation.PaymentMethod, donation.AdminAllowed, donation.AdminRate, donation.AmilRate,
-                donation.Reference, donation.Notes, donation.IsVoided,
-                donation.Allocation is null
-                    ? null
-                    : new DonationAllocationResponse(donation.Allocation.ProgramAmount, donation.Allocation.AdminAmount, donation.Allocation.AmilAmount));
+                donation.Id, donation.DonorId, donation.Donor.Name, donation.AmountOriginal, donation.Currency,
+                donation.FxRateToPhp, donation.AmountPhp, donation.FundCode, donation.DateReceived, donation.Channel,
+                donation.Purpose, donation.AdminAllowed, donation.AdminRateInput, donation.AdminRateCap, donation.AdminRateApplied,
+                donation.ProgramAllocationPhp, donation.AdminAllocationPhp, donation.Notes, donation.IsVoided,
+                donation.Allocations
+                    .Select(a => new DonationAllocationLineResponse(a.AllocationType, a.TargetBucketCode, a.AllocationRate, a.AllocatedAmountPhp))
+                    .ToList());
 
             return Results.Ok(response);
         })

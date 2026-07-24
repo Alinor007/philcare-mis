@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Domain;
 using philcare.Api.Common.Persistence;
 using philcare.Api.Features.Programs.Domain;
+using philcare.Api.Features.ReferenceData.Domain;
 
 namespace philcare.Api.Features.Programs.Activities.CreateActivity;
 
@@ -22,6 +23,11 @@ public sealed class CreateActivityHandler(AppDbContext db)
                 Error.Validation("Activities.ProjectInactive", "Cannot create an activity under an inactive project."));
         }
 
+        // ImplementingPartner (string) is server-derived from Partner.Name when the FK is set, rather
+        // than trusting the client's string, so the two fields can't silently drift before the legacy
+        // string column is dropped in Sprint 5.
+        var implementingPartnerName = request.ImplementingPartner;
+
         if (request.ImplementingPartnerId is not null)
         {
             var partner = await db.Partners.FirstOrDefaultAsync(p => p.Id == request.ImplementingPartnerId, cancellationToken);
@@ -35,6 +41,20 @@ public sealed class CreateActivityHandler(AppDbContext db)
             {
                 return Result.Failure<CreateActivityResponse>(
                     Error.Validation("Activities.PartnerInactive", "Cannot link an activity to an inactive partner."));
+            }
+
+            implementingPartnerName = partner.Name;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SafeguardingRisk))
+        {
+            var validSafeguardingRisk = await db.LookupItems.AnyAsync(
+                l => l.Category == LookupCategory.SafeguardingCategory && l.Code == request.SafeguardingRisk, cancellationToken);
+
+            if (!validSafeguardingRisk)
+            {
+                return Result.Failure<CreateActivityResponse>(
+                    Error.Validation("Activities.InvalidSafeguardingRisk", "Safeguarding risk must be a valid safeguarding_category lookup code."));
             }
         }
 
@@ -52,7 +72,7 @@ public sealed class CreateActivityHandler(AppDbContext db)
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             Budget = request.Budget,
-            ImplementingPartner = request.ImplementingPartner,
+            ImplementingPartner = implementingPartnerName,
             ImplementingPartnerId = request.ImplementingPartnerId,
             ResponsibleDepartment = request.ResponsibleDepartment,
             SdgAlignment = request.SdgAlignment,

@@ -28,6 +28,10 @@ public class ZakatEligibilityConfiguration : IEntityTypeConfiguration<ZakatEligi
 
         builder.HasIndex(z => new { z.ParticipantId, z.Status });
 
+        // At most one live (Approved, unexpired) case per participant — NULLs don't collide in a
+        // unique index, so only one IsLiveApproval = true row can exist per ParticipantId.
+        builder.HasIndex(z => new { z.ParticipantId, z.IsLiveApproval }).IsUnique();
+
         builder.HasOne(z => z.Participant)
             .WithMany()
             .HasForeignKey(z => z.ParticipantId)

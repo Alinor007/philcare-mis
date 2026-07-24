@@ -14,4 +14,5 @@ public static class LookupCategory
     public const string PartnerType = "partner_type";
     public const string VolunteerStatus = "volunteer_status";
     public const string SponsorshipType = "sponsorship_type";
+    public const string SafeguardingCategory = "safeguarding_category";
 }

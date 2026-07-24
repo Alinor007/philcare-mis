@@ -25,6 +25,8 @@ public class Activity : Entity
 
     // Legacy free-text partner name — kept for one sprint alongside ImplementingPartnerId
     // (existing free text can't be reliably auto-matched to a Partner row); drop in Sprint 5.
+    // Server-derived from ImplementingPartnerRef.Name whenever the FK is set (see Create/UpdateActivity
+    // and UpdatePartnerHandler, which cascades a partner rename here) — never a second source of truth.
     public string? ImplementingPartner { get; set; }
 
     public int? ImplementingPartnerId { get; set; }

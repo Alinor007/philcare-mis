@@ -39,6 +39,10 @@ public sealed class AddActivityVolunteerHandler(AppDbContext db)
                 Error.Conflict("ActivityVolunteers.AlreadyEnrolled", "This volunteer is already enrolled in this activity."));
         }
 
+        // Confirmed policy: ANY safeguarding risk tier (not just High) blocks an unoriented volunteer —
+        // a deliberately conservative posture, not an oversight. SafeguardingRisk is validated against
+        // the safeguarding_category lookup at Activity create/update time, so a typo can't silently
+        // widen or narrow this gate.
         var hasSafeguardingRisk = !string.IsNullOrWhiteSpace(activity.SafeguardingRisk)
             && !string.Equals(activity.SafeguardingRisk, "NONE", StringComparison.OrdinalIgnoreCase);
 

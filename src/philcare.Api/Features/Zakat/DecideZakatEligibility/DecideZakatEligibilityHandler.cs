@@ -24,9 +24,11 @@ public sealed class DecideZakatEligibilityHandler(AppDbContext db)
 
         if (request.Approve)
         {
+            var today = DateTime.UtcNow.Date;
+
             var alreadyApproved = await db.ZakatEligibilities.AnyAsync(
                 z => z.Id != id && z.ParticipantId == eligibility.ParticipantId && z.Status == ZakatEligibilityStatus.Approved
-                    && (z.ValidUntil == null || z.ValidUntil >= DateTime.UtcNow.Date),
+                    && (z.ValidUntil == null || z.ValidUntil >= today),
                 cancellationToken);
 
             if (alreadyApproved)
@@ -35,10 +37,25 @@ public sealed class DecideZakatEligibilityHandler(AppDbContext db)
                     Error.Conflict("Zakat.AlreadyApproved", "This participant already has an approved, unexpired zakat eligibility case."));
             }
 
+            // Clear the live-approval flag on any of this participant's Approved cases that have since
+            // expired, so a fresh approval doesn't collide with the (ParticipantId, IsLiveApproval)
+            // unique index — that index is what actually closes the concurrent-approval race; the
+            // AnyAsync check above is just a friendly pre-flight for the common case.
+            var expiredLiveApprovals = await db.ZakatEligibilities
+                .Where(z => z.ParticipantId == eligibility.ParticipantId && z.IsLiveApproval == true
+                    && z.ValidUntil != null && z.ValidUntil < today)
+                .ToListAsync(cancellationToken);
+
+            foreach (var expired in expiredLiveApprovals)
+            {
+                expired.IsLiveApproval = null;
+            }
+
             eligibility.Status = ZakatEligibilityStatus.Approved;
-            eligibility.DecisionDate = DateTime.UtcNow.Date;
+            eligibility.DecisionDate = today;
             eligibility.DecidedBy = request.DecidedBy;
-            eligibility.ValidUntil = request.ValidUntil ?? DateTime.UtcNow.Date.AddMonths(12);
+            eligibility.ValidUntil = request.ValidUntil ?? today.AddMonths(12);
+            eligibility.IsLiveApproval = true;
         }
         else
         {
@@ -48,7 +65,18 @@ public sealed class DecideZakatEligibilityHandler(AppDbContext db)
             eligibility.RejectionReason = request.RejectionReason;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException) when (request.Approve)
+        {
+            // The (ParticipantId, IsLiveApproval) unique index caught a concurrent approval that the
+            // AnyAsync pre-check above missed — lose cleanly with the same conflict the pre-check would
+            // have returned, instead of surfacing a raw 500.
+            return Result.Failure<DecideZakatEligibilityResponse>(
+                Error.Conflict("Zakat.AlreadyApproved", "This participant already has an approved, unexpired zakat eligibility case."));
+        }
 
         return Result.Success(new DecideZakatEligibilityResponse(
             eligibility.Id, eligibility.Status.ToString(), eligibility.ValidUntil, eligibility.RejectionReason));

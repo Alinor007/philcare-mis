@@ -174,10 +174,111 @@ public class PartnersTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    [Fact]
+    public async Task CreateActivity_WithImplementingPartnerIdAndContradictoryString_DerivesNameFromPartner()
+    {
+        await AuthenticateAsAdminAsync();
+        var projectId = await CreateProjectAsync();
+        var partnerName = $"Al-Ihsan Foundation-{Guid.NewGuid():N}";
+        var partnerId = await CreatePartnerAsync(partnerName);
+
+        var createResponse = await _client.PostAsJsonAsync("/api/activities", new
+        {
+            ProjectId = projectId,
+            Name = $"Activity-{Guid.NewGuid():N}",
+            ActivityType = "OUTREACH",
+            Budget = 1000m,
+            ImplementingPartner = "This string should be ignored",
+            ImplementingPartnerId = partnerId
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var activity = await createResponse.Content.ReadFromJsonAsync<CreateActivityResponse>(JsonOptions);
+
+        var detailResponse = await _client.GetAsync($"/api/activities/{activity!.Id}");
+        detailResponse.EnsureSuccessStatusCode();
+        var detail = await detailResponse.Content.ReadFromJsonAsync<ActivityDetailDto>(JsonOptions);
+
+        Assert.Equal(partnerName, detail!.ImplementingPartner);
+        Assert.Equal(partnerName, detail.ImplementingPartnerName);
+    }
+
+    [Fact]
+    public async Task RenamePartner_CascadesNewNameToLinkedActivities()
+    {
+        await AuthenticateAsAdminAsync();
+        var projectId = await CreateProjectAsync();
+        var originalName = $"Original-Partner-{Guid.NewGuid():N}";
+        var partnerId = await CreatePartnerAsync(originalName);
+
+        var createResponse = await _client.PostAsJsonAsync("/api/activities", new
+        {
+            ProjectId = projectId,
+            Name = $"Activity-{Guid.NewGuid():N}",
+            ActivityType = "OUTREACH",
+            Budget = 1000m,
+            ImplementingPartnerId = partnerId
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var activity = await createResponse.Content.ReadFromJsonAsync<CreateActivityResponse>(JsonOptions);
+
+        var renamedName = $"Renamed-Partner-{Guid.NewGuid():N}";
+        var updateResponse = await _client.PutAsJsonAsync($"/api/partners/{partnerId}", new
+        {
+            Name = renamedName,
+            PartnerType = "IMPLEMENTING",
+            IsActive = true
+        });
+        updateResponse.EnsureSuccessStatusCode();
+
+        var detailResponse = await _client.GetAsync($"/api/activities/{activity!.Id}");
+        detailResponse.EnsureSuccessStatusCode();
+        var detail = await detailResponse.Content.ReadFromJsonAsync<ActivityDetailDto>(JsonOptions);
+
+        Assert.Equal(renamedName, detail!.ImplementingPartner);
+    }
+
+    [Fact]
+    public async Task CreateActivity_WithInvalidSafeguardingRisk_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var projectId = await CreateProjectAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/activities", new
+        {
+            ProjectId = projectId,
+            Name = $"Activity-{Guid.NewGuid():N}",
+            ActivityType = "OUTREACH",
+            Budget = 1000m,
+            SafeguardingRisk = "NOT_A_REAL_CATEGORY"
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateActivity_WithValidSafeguardingRisk_Succeeds()
+    {
+        await AuthenticateAsAdminAsync();
+        var projectId = await CreateProjectAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/activities", new
+        {
+            ProjectId = projectId,
+            Name = $"Activity-{Guid.NewGuid():N}",
+            ActivityType = "OUTREACH",
+            Budget = 1000m,
+            SafeguardingRisk = "CHILD"
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+    }
+
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
     private sealed record PartnerDetailDto(
         int Id, string Name, string PartnerType, string? ContactPerson, string? Email, string? Phone, string? Address,
         string? City, string? Province, string? Region, string? MouReference, DateTime? MouStartDate, DateTime? MouEndDate,
         string? AccreditationNotes, string? Notes, bool IsActive, int ActivityCount);
+
+    private sealed record ActivityDetailDto(int Id, string? ImplementingPartner, int? ImplementingPartnerId, string? ImplementingPartnerName);
 }

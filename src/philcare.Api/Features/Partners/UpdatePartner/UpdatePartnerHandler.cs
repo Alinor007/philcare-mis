@@ -23,6 +23,8 @@ public sealed class UpdatePartnerHandler(AppDbContext db)
                 Error.Conflict("Partners.DuplicateName", "A partner with this name already exists."));
         }
 
+        var nameChanged = partner.Name != request.Name;
+
         partner.Name = request.Name;
         partner.PartnerType = request.PartnerType;
         partner.ContactPerson = request.ContactPerson;
@@ -38,6 +40,20 @@ public sealed class UpdatePartnerHandler(AppDbContext db)
         partner.AccreditationNotes = request.AccreditationNotes;
         partner.Notes = request.Notes;
         partner.IsActive = request.IsActive;
+
+        // Activity.ImplementingPartner is a server-derived cache of the linked Partner's name (see
+        // Create/UpdateActivity) — on rename, cascade so the cache doesn't go stale.
+        if (nameChanged)
+        {
+            var linkedActivities = await db.Activities
+                .Where(a => a.ImplementingPartnerId == id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var activity in linkedActivities)
+            {
+                activity.ImplementingPartner = request.Name;
+            }
+        }
 
         await db.SaveChangesAsync(cancellationToken);
 

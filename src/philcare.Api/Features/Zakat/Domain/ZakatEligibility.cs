@@ -34,4 +34,13 @@ public class ZakatEligibility : Entity
     public DateTime? ValidUntil { get; set; }
     public string? RejectionReason { get; set; }
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// true only while this case is the participant's live (Approved, unexpired) approval; null otherwise.
+    /// Backed by a unique index on (ParticipantId, IsLiveApproval) — NULLs never collide, so at most one
+    /// true row can exist per participant. This is the MariaDB 10.4 substitute for a filtered unique index
+    /// and closes the concurrent-approval race. Reads (distribution gate, handler pre-checks) still use
+    /// Status/ValidUntil; the flag exists purely for the DB-level uniqueness guarantee.
+    /// </summary>
+    public bool? IsLiveApproval { get; set; }
 }

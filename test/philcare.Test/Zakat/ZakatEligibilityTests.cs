@@ -229,6 +229,33 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.Conflict, secondSubmit.StatusCode);
     }
 
+    [Fact]
+    public async Task Approve_AfterPreviousApprovalExpired_Succeeds()
+    {
+        await AuthenticateAsAdminAsync();
+        var participantId = await CreateParticipantAsync();
+
+        var first = await CreateEligibilityAsync(participantId);
+        var firstSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{first.Id}/submit", null);
+        firstSubmit.EnsureSuccessStatusCode();
+        var firstDecision = await _client.PostAsJsonAsync($"/api/zakat-eligibilities/{first.Id}/decision", new
+        {
+            Approve = true,
+            ValidUntil = DateTime.UtcNow.Date.AddDays(-1) // already expired
+        });
+        firstDecision.EnsureSuccessStatusCode();
+
+        var second = await CreateEligibilityAsync(participantId);
+        var secondSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{second.Id}/submit", null);
+        secondSubmit.EnsureSuccessStatusCode();
+
+        var secondDecision = await _client.PostAsJsonAsync($"/api/zakat-eligibilities/{second.Id}/decision", new { Approve = true });
+
+        Assert.Equal(HttpStatusCode.OK, secondDecision.StatusCode);
+        var decision = await secondDecision.Content.ReadFromJsonAsync<DecisionDto>(JsonOptions);
+        Assert.Equal("Approved", decision!.Status);
+    }
+
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
     private sealed record DecisionDto(int Id, string Status, DateTime? ValidUntil, string? RejectionReason);

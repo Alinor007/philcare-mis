@@ -180,4 +180,125 @@ Authorization: Bearer {{token}}
 GET {{philcare.Api_HostAddress}}/api/reports/restricted-ledger?year=2026
 Authorization: Bearer {{token}}
 
+### --- Programs module ---
+
+### Create program
+POST {{philcare.Api_HostAddress}}/api/programs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Emergency Relief",
+  "category": "RELIEF",
+  "ownerDepartment": "Programs Department"
+}
+
+### List programs
+GET {{philcare.Api_HostAddress}}/api/programs
+Authorization: Bearer {{token}}
+
+### Get program detail (replace {{programId}})
+GET {{philcare.Api_HostAddress}}/api/programs/{{programId}}
+Authorization: Bearer {{token}}
+
+### Create project under a program
+POST {{philcare.Api_HostAddress}}/api/projects
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "programId": 1,
+  "name": "2026 Flood Response",
+  "fundCode": "REST-FUND",
+  "totalBudget": 500000,
+  "targetBeneficiaries": 2000,
+  "location": "Marikina City"
+}
+
+### List projects (filters: programId, implementationStatus, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/projects
+Authorization: Bearer {{token}}
+
+### Create activity under a project
+POST {{philcare.Api_HostAddress}}/api/activities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "projectId": 1,
+  "name": "Food Pack Distribution - Batch 1",
+  "activityType": "RELIEF_DISTRIBUTION",
+  "region": "NCR",
+  "budget": 100000,
+  "implementingPartner": "Local Barangay Council"
+}
+
+### List activities (filters: projectId, implementationStatus, from, to)
+GET {{philcare.Api_HostAddress}}/api/activities
+Authorization: Bearer {{token}}
+
+### Create participant (beneficiary)
+POST {{philcare.Api_HostAddress}}/api/participants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Juan Dela Cruz",
+  "participantType": "BENEFICIARY",
+  "gender": "Male",
+  "ageGroup": "ADULT",
+  "vulnerabilityCategory": "POOR",
+  "consentOnFile": true
+}
+
+### List participants (filters: participantType, status, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/participants
+Authorization: Bearer {{token}}
+
+### Enroll a participant into an activity (replace {{activityId}})
+POST {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/participants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "participantId": 1,
+  "roleInActivity": "Recipient",
+  "attendanceStatus": "Present",
+  "consentRequired": false
+}
+
+### Get activity roster
+GET {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/participants
+Authorization: Bearer {{token}}
+
+### Create distribution linked to Finance zakat program bucket (requires zakatAsnaf)
+POST {{philcare.Api_HostAddress}}/api/distributions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "distributionType": "CASH_ASSISTANCE",
+  "participantId": 1,
+  "activityId": 1,
+  "fundingBucketCode": "ZAK-PROG",
+  "zakatAsnaf": "FUQARA",
+  "quantity": 1,
+  "totalValuePhp": 1000,
+  "distributionDate": "2026-07-20T00:00:00Z",
+  "fieldVerified": true,
+  "receivedConfirmation": true
+}
+
+### List distributions (filters: participantId, activityId, distributionType, from, to, includeVoided)
+GET {{philcare.Api_HostAddress}}/api/distributions
+Authorization: Bearer {{token}}
+
+### Program summary report
+GET {{philcare.Api_HostAddress}}/api/reports/program-summary
+Authorization: Bearer {{token}}
+
+### Distribution summary report
+GET {{philcare.Api_HostAddress}}/api/reports/distribution-summary
+Authorization: Bearer {{token}}
+
 ###

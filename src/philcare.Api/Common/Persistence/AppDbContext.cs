@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Features.Auth.Domain;
 using philcare.Api.Features.Finance.Domain;
+using philcare.Api.Features.Programs.Domain;
 using philcare.Api.Features.ReferenceData.Domain;
 
 namespace philcare.Api.Common.Persistence;
@@ -19,6 +20,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<Expense> Expenses => Set<Expense>();
+
+    // Programs
+    public DbSet<AidProgram> Programs => Set<AidProgram>();
+    public DbSet<Project> Projects => Set<Project>();
+    public DbSet<Activity> Activities => Set<Activity>();
+    public DbSet<Participant> Participants => Set<Participant>();
+    public DbSet<ActivityParticipant> ActivityParticipants => Set<ActivityParticipant>();
+    public DbSet<Distribution> Distributions => Set<Distribution>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

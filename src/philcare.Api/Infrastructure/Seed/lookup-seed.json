@@ -70,5 +70,42 @@
   { "Category": "distribution_type", "Code": "HYGIENE_KIT", "Label": "Hygiene Kit", "SortOrder": 3 },
   { "Category": "distribution_type", "Code": "SCHOOL_SUPPLIES", "Label": "School Supplies", "SortOrder": 4 },
   { "Category": "distribution_type", "Code": "MEDICAL_SUPPLIES", "Label": "Medical Supplies", "SortOrder": 5 },
-  { "Category": "distribution_type", "Code": "SHELTER_KIT", "Label": "Shelter Kit", "SortOrder": 6 }
+  { "Category": "distribution_type", "Code": "SHELTER_KIT", "Label": "Shelter Kit", "SortOrder": 6 },
+
+  { "Category": "participant_type", "Code": "BENEFICIARY", "Label": "Beneficiary", "SortOrder": 1 },
+  { "Category": "participant_type", "Code": "TRAINEE", "Label": "Trainee", "SortOrder": 2 },
+  { "Category": "participant_type", "Code": "ATTENDEE", "Label": "Attendee", "SortOrder": 3 },
+  { "Category": "participant_type", "Code": "VOLUNTEER", "Label": "Volunteer", "SortOrder": 4 },
+  { "Category": "participant_type", "Code": "PARTNER_REP", "Label": "Partner Representative", "SortOrder": 5 },
+
+  { "Category": "vulnerability_category", "Code": "POOR", "Label": "Poor", "SortOrder": 1 },
+  { "Category": "vulnerability_category", "Code": "ORPHAN", "Label": "Orphan", "SortOrder": 2 },
+  { "Category": "vulnerability_category", "Code": "WIDOW", "Label": "Widow", "SortOrder": 3 },
+  { "Category": "vulnerability_category", "Code": "PWD", "Label": "Person with Disability", "SortOrder": 4 },
+  { "Category": "vulnerability_category", "Code": "ELDERLY", "Label": "Elderly", "SortOrder": 5 },
+  { "Category": "vulnerability_category", "Code": "IDP", "Label": "Internally Displaced Person", "SortOrder": 6 },
+  { "Category": "vulnerability_category", "Code": "SOLO_PARENT", "Label": "Solo Parent", "SortOrder": 7 },
+
+  { "Category": "safeguarding_category", "Code": "NONE", "Label": "None", "SortOrder": 1 },
+  { "Category": "safeguarding_category", "Code": "CHILD", "Label": "Child Protection", "SortOrder": 2 },
+  { "Category": "safeguarding_category", "Code": "VULNERABLE_ADULT", "Label": "Vulnerable Adult", "SortOrder": 3 },
+  { "Category": "safeguarding_category", "Code": "HIGH_RISK", "Label": "High Risk", "SortOrder": 4 },
+
+  { "Category": "program_category", "Code": "RELIEF", "Label": "Relief", "SortOrder": 1 },
+  { "Category": "program_category", "Code": "EDUCATION", "Label": "Education", "SortOrder": 2 },
+  { "Category": "program_category", "Code": "HEALTH", "Label": "Health", "SortOrder": 3 },
+  { "Category": "program_category", "Code": "LIVELIHOOD", "Label": "Livelihood", "SortOrder": 4 },
+  { "Category": "program_category", "Code": "WASH", "Label": "Water, Sanitation & Hygiene", "SortOrder": 5 },
+  { "Category": "program_category", "Code": "SEASONAL", "Label": "Seasonal Program", "SortOrder": 6 },
+
+  { "Category": "implementation_status", "Code": "PLANNED", "Label": "Planned", "SortOrder": 1 },
+  { "Category": "implementation_status", "Code": "ONGOING", "Label": "Ongoing", "SortOrder": 2 },
+  { "Category": "implementation_status", "Code": "COMPLETED", "Label": "Completed", "SortOrder": 3 },
+  { "Category": "implementation_status", "Code": "ON_HOLD", "Label": "On Hold", "SortOrder": 4 },
+  { "Category": "implementation_status", "Code": "CANCELLED", "Label": "Cancelled", "SortOrder": 5 },
+
+  { "Category": "age_group", "Code": "CHILD", "Label": "Child", "SortOrder": 1 },
+  { "Category": "age_group", "Code": "YOUTH", "Label": "Youth", "SortOrder": 2 },
+  { "Category": "age_group", "Code": "ADULT", "Label": "Adult", "SortOrder": 3 },
+  { "Category": "age_group", "Code": "SENIOR", "Label": "Senior", "SortOrder": 4 }
 ]

@@ -19,6 +19,16 @@ using philcare.Api.Features.Finance.Donors.CreateDonor;
 using philcare.Api.Features.Finance.Donors.UpdateDonor;
 using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Api.Features.Finance.Expenses.VoidExpense;
+using philcare.Api.Features.Programs.ActivityParticipants.AddActivityParticipant;
+using philcare.Api.Features.Programs.Activities.CreateActivity;
+using philcare.Api.Features.Programs.Activities.UpdateActivity;
+using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
+using philcare.Api.Features.Programs.AidPrograms.UpdateProgram;
+using philcare.Api.Features.Programs.Distributions.CreateDistribution;
+using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Programs.Participants.UpdateParticipant;
+using philcare.Api.Features.Programs.Projects.CreateProject;
+using philcare.Api.Features.Programs.Projects.UpdateProject;
 using philcare.Api.Features.ReferenceData.CreateLookup;
 using philcare.Api.Features.ReferenceData.UpdateLookup;
 using philcare.Api.Features.Users.UpdateUser;
@@ -83,7 +93,8 @@ public static class DependencyInjection
 
         services.AddAuthorizationBuilder()
             .AddPolicy("Admin", policy => policy.RequireRole("Admin"))
-            .AddPolicy("Finance", policy => policy.RequireRole("Finance", "Admin"));
+            .AddPolicy("Finance", policy => policy.RequireRole("Finance", "Admin"))
+            .AddPolicy("Program", policy => policy.RequireRole("Program", "Admin"));
 
         services.Configure<LockoutOptions>(configuration.GetSection(LockoutOptions.SectionName));
 
@@ -118,6 +129,18 @@ public static class DependencyInjection
         services.AddScoped<VoidDonationHandler>();
         services.AddScoped<CreateExpenseHandler>();
         services.AddScoped<VoidExpenseHandler>();
+
+        // Programs handlers — Sprint 3
+        services.AddScoped<CreateProgramHandler>();
+        services.AddScoped<UpdateProgramHandler>();
+        services.AddScoped<CreateProjectHandler>();
+        services.AddScoped<UpdateProjectHandler>();
+        services.AddScoped<CreateActivityHandler>();
+        services.AddScoped<UpdateActivityHandler>();
+        services.AddScoped<CreateParticipantHandler>();
+        services.AddScoped<UpdateParticipantHandler>();
+        services.AddScoped<AddActivityParticipantHandler>();
+        services.AddScoped<CreateDistributionHandler>();
 
         return services;
     }

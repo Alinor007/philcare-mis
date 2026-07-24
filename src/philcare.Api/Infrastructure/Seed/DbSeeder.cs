@@ -76,11 +76,6 @@ public sealed class DbSeeder(
 
     private async Task SeedLookupsAsync(CancellationToken cancellationToken)
     {
-        if (await db.LookupItems.AnyAsync(cancellationToken))
-        {
-            return;
-        }
-
         var seedFilePath = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Seed", "lookup-seed.json");
         if (!File.Exists(seedFilePath))
         {
@@ -99,7 +94,22 @@ public sealed class DbSeeder(
             return;
         }
 
-        db.LookupItems.AddRange(rows.Select(r => new LookupItem
+        // Additive: only insert (category, code) pairs not already present, so new lookup
+        // categories introduced in later sprints seed into databases that already have data.
+        var existingKeys = (await db.LookupItems
+                .Select(l => new { l.Category, l.Code })
+                .ToListAsync(cancellationToken))
+            .Select(l => (l.Category, l.Code))
+            .ToHashSet();
+
+        var newRows = rows.Where(r => !existingKeys.Contains((r.Category, r.Code))).ToList();
+
+        if (newRows.Count == 0)
+        {
+            return;
+        }
+
+        db.LookupItems.AddRange(newRows.Select(r => new LookupItem
         {
             Category = r.Category,
             Code = r.Code,
@@ -109,7 +119,7 @@ public sealed class DbSeeder(
         }));
 
         await db.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Seeded {Count} lookup items", rows.Count);
+        logger.LogInformation("Seeded {Count} new lookup items", newRows.Count);
     }
 
     private async Task SeedFinanceAsync(CancellationToken cancellationToken)

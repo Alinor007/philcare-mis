@@ -22,6 +22,22 @@ public sealed class CreateActivityHandler(AppDbContext db)
                 Error.Validation("Activities.ProjectInactive", "Cannot create an activity under an inactive project."));
         }
 
+        if (request.ImplementingPartnerId is not null)
+        {
+            var partner = await db.Partners.FirstOrDefaultAsync(p => p.Id == request.ImplementingPartnerId, cancellationToken);
+
+            if (partner is null)
+            {
+                return Result.Failure<CreateActivityResponse>(Error.NotFound("Activities.PartnerNotFound", "Partner not found."));
+            }
+
+            if (!partner.IsActive)
+            {
+                return Result.Failure<CreateActivityResponse>(
+                    Error.Validation("Activities.PartnerInactive", "Cannot link an activity to an inactive partner."));
+            }
+        }
+
         var activity = new Activity
         {
             ProjectId = project.Id,
@@ -37,6 +53,7 @@ public sealed class CreateActivityHandler(AppDbContext db)
             EndDate = request.EndDate,
             Budget = request.Budget,
             ImplementingPartner = request.ImplementingPartner,
+            ImplementingPartnerId = request.ImplementingPartnerId,
             ResponsibleDepartment = request.ResponsibleDepartment,
             SdgAlignment = request.SdgAlignment,
             ImplementationStatus = "PLANNED",

@@ -739,6 +739,95 @@ namespace philcare.Api.Migrations
                     b.ToTable("OpeningBalances", (string)null);
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Partners.Domain.Partner", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AccreditationNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ContactPerson")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("MouEndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("MouReference")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("MouStartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("PartnerType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Province")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Partners", (string)null);
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Programs.Domain.Activity", b =>
                 {
                     b.Property<int>("Id")
@@ -789,6 +878,9 @@ namespace philcare.Api.Migrations
                     b.Property<string>("ImplementingPartner")
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
+
+                    b.Property<int?>("ImplementingPartnerId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
@@ -841,6 +933,8 @@ namespace philcare.Api.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ImplementingPartnerId");
 
                     b.HasIndex("ProjectId");
 
@@ -1267,6 +1361,292 @@ namespace philcare.Api.Migrations
                     b.ToTable("LookupItems", (string)null);
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Sponsorships.Domain.Sponsorship", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CaseWorker")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("DonorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("MonthlyAmountPhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<DateTime?>("NextReviewDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SponsorshipType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipantId");
+
+                    b.HasIndex("DonorId", "ParticipantId");
+
+                    b.ToTable("Sponsorships", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Volunteers.Domain.ActivityVolunteer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ActivityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AttendanceStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("HoursServed")
+                        .HasPrecision(5, 1)
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("RoleInActivity")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("VolunteerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VolunteerId");
+
+                    b.HasIndex("ActivityId", "VolunteerId")
+                        .IsUnique();
+
+                    b.ToTable("ActivityVolunteers", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Volunteers.Domain.Volunteer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Barangay")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("CodeOfConductDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("CodeOfConductSigned")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<bool>("OrientationCompleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("OrientationDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("PoliceClearanceOnFile")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Province")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Region")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Skills")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Volunteers", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Zakat.Domain.ZakatEligibility", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AsnafCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("AssessedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("AssessmentDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("AssessmentNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DecidedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("DecisionDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("HouseholdSize")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("MonthlyIncomePhp")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("ParticipantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ValidUntil")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ParticipantId", "Status");
+
+                    b.ToTable("ZakatEligibilities", (string)null);
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Auth.Domain.RefreshToken", b =>
                 {
                     b.HasOne("philcare.Api.Features.Auth.Domain.User", "User")
@@ -1373,11 +1753,18 @@ namespace philcare.Api.Migrations
 
             modelBuilder.Entity("philcare.Api.Features.Programs.Domain.Activity", b =>
                 {
+                    b.HasOne("philcare.Api.Features.Partners.Domain.Partner", "ImplementingPartnerRef")
+                        .WithMany("Activities")
+                        .HasForeignKey("ImplementingPartnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("philcare.Api.Features.Programs.Domain.Project", "Project")
                         .WithMany("Activities")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("ImplementingPartnerRef");
 
                     b.Navigation("Project");
                 });
@@ -1430,6 +1817,55 @@ namespace philcare.Api.Migrations
                     b.Navigation("Program");
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Sponsorships.Domain.Sponsorship", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Donor", "Donor")
+                        .WithMany()
+                        .HasForeignKey("DonorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Programs.Domain.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Donor");
+
+                    b.Navigation("Participant");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Volunteers.Domain.ActivityVolunteer", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Programs.Domain.Activity", "Activity")
+                        .WithMany("ActivityVolunteers")
+                        .HasForeignKey("ActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Volunteers.Domain.Volunteer", "Volunteer")
+                        .WithMany("ActivityVolunteers")
+                        .HasForeignKey("VolunteerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Activity");
+
+                    b.Navigation("Volunteer");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Zakat.Domain.ZakatEligibility", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Programs.Domain.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Participant");
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Auth.Domain.User", b =>
                 {
                     b.Navigation("RefreshTokens");
@@ -1457,9 +1893,16 @@ namespace philcare.Api.Migrations
                     b.Navigation("Expenses");
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Partners.Domain.Partner", b =>
+                {
+                    b.Navigation("Activities");
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Programs.Domain.Activity", b =>
                 {
                     b.Navigation("ActivityParticipants");
+
+                    b.Navigation("ActivityVolunteers");
 
                     b.Navigation("Distributions");
                 });
@@ -1479,6 +1922,11 @@ namespace philcare.Api.Migrations
             modelBuilder.Entity("philcare.Api.Features.Programs.Domain.Project", b =>
                 {
                     b.Navigation("Activities");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Volunteers.Domain.Volunteer", b =>
+                {
+                    b.Navigation("ActivityVolunteers");
                 });
 #pragma warning restore 612, 618
         }

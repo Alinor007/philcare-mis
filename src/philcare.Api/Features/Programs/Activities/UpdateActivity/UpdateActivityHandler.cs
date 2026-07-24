@@ -15,6 +15,22 @@ public sealed class UpdateActivityHandler(AppDbContext db)
             return Result.Failure<UpdateActivityResponse>(Error.NotFound("Activities.NotFound", "Activity not found."));
         }
 
+        if (request.ImplementingPartnerId is not null)
+        {
+            var partner = await db.Partners.FirstOrDefaultAsync(p => p.Id == request.ImplementingPartnerId, cancellationToken);
+
+            if (partner is null)
+            {
+                return Result.Failure<UpdateActivityResponse>(Error.NotFound("Activities.PartnerNotFound", "Partner not found."));
+            }
+
+            if (!partner.IsActive)
+            {
+                return Result.Failure<UpdateActivityResponse>(
+                    Error.Validation("Activities.PartnerInactive", "Cannot link an activity to an inactive partner."));
+            }
+        }
+
         activity.Name = request.Name;
         activity.ActivityCategory = request.ActivityCategory;
         activity.ActivityType = request.ActivityType;
@@ -27,6 +43,7 @@ public sealed class UpdateActivityHandler(AppDbContext db)
         activity.EndDate = request.EndDate;
         activity.Budget = request.Budget;
         activity.ImplementingPartner = request.ImplementingPartner;
+        activity.ImplementingPartnerId = request.ImplementingPartnerId;
         activity.ResponsibleDepartment = request.ResponsibleDepartment;
         activity.SdgAlignment = request.SdgAlignment;
         activity.ImplementationStatus = request.ImplementationStatus;

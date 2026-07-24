@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using philcare.Api.Features.Programs.Distributions.CreateDistribution;
 using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Zakat.CreateZakatEligibility;
 using philcare.Test.Common;
 using Xunit;
 
@@ -50,6 +51,28 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         response.EnsureSuccessStatusCode();
         var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
         return participant!.Id;
+    }
+
+    private async Task ApproveZakatEligibilityAsync(int participantId, string asnaf = "FUQARA", DateTime? validUntil = null)
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/zakat-eligibilities", new
+        {
+            ParticipantId = participantId,
+            AsnafCategory = asnaf,
+            AssessmentDate = DateTime.UtcNow
+        });
+        createResponse.EnsureSuccessStatusCode();
+        var eligibility = await createResponse.Content.ReadFromJsonAsync<CreateZakatEligibilityResponse>(JsonOptions);
+
+        var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility!.Id}/submit", null);
+        submitResponse.EnsureSuccessStatusCode();
+
+        var decisionResponse = await _client.PostAsJsonAsync($"/api/zakat-eligibilities/{eligibility.Id}/decision", new
+        {
+            Approve = true,
+            ValidUntil = validUntil
+        });
+        decisionResponse.EnsureSuccessStatusCode();
     }
 
     [Fact]
@@ -118,7 +141,7 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucketWithoutAsnaf_ReturnsBadRequest()
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithoutApprovedEligibility_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
         var participantId = await CreateParticipantAsync();
@@ -128,6 +151,7 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
             DistributionType = "CASH_ASSISTANCE",
             ParticipantId = participantId,
             FundingBucketCode = "ZAK-PROG", // seeded Finance zakat program bucket
+            ZakatAsnaf = "FUQARA",
             Quantity = 1,
             TotalValuePhp = 1000m,
             DistributionDate = DateTime.UtcNow,
@@ -139,17 +163,17 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucketWithAsnaf_Succeeds()
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithApprovedEligibilityAndOmittedAsnaf_AutoFillsAsnaf()
     {
         await AuthenticateAsAdminAsync();
         var participantId = await CreateParticipantAsync();
+        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA");
 
         var response = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "CASH_ASSISTANCE",
             ParticipantId = participantId,
             FundingBucketCode = "ZAK-PROG",
-            ZakatAsnaf = "FUQARA",
             Quantity = 1,
             TotalValuePhp = 1000m,
             DistributionDate = DateTime.UtcNow,
@@ -158,6 +182,53 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var distribution = await response.Content.ReadFromJsonAsync<CreateDistributionResponse>(JsonOptions);
+        Assert.Equal("FUQARA", distribution!.ZakatAsnaf);
+    }
+
+    [Fact]
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithMismatchedAsnaf_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var participantId = await CreateParticipantAsync();
+        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA");
+
+        var response = await _client.PostAsJsonAsync("/api/distributions", new
+        {
+            DistributionType = "CASH_ASSISTANCE",
+            ParticipantId = participantId,
+            FundingBucketCode = "ZAK-PROG",
+            ZakatAsnaf = "GHARIMIN",
+            Quantity = 1,
+            TotalValuePhp = 1000m,
+            DistributionDate = DateTime.UtcNow,
+            FieldVerified = true,
+            ReceivedConfirmation = true
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithExpiredEligibility_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var participantId = await CreateParticipantAsync();
+        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA", validUntil: DateTime.UtcNow.Date.AddDays(-1));
+
+        var response = await _client.PostAsJsonAsync("/api/distributions", new
+        {
+            DistributionType = "CASH_ASSISTANCE",
+            ParticipantId = participantId,
+            FundingBucketCode = "ZAK-PROG",
+            Quantity = 1,
+            TotalValuePhp = 1000m,
+            DistributionDate = DateTime.UtcNow,
+            FieldVerified = true,
+            ReceivedConfirmation = true
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

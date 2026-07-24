@@ -107,5 +107,21 @@
   { "Category": "age_group", "Code": "CHILD", "Label": "Child", "SortOrder": 1 },
   { "Category": "age_group", "Code": "YOUTH", "Label": "Youth", "SortOrder": 2 },
   { "Category": "age_group", "Code": "ADULT", "Label": "Adult", "SortOrder": 3 },
-  { "Category": "age_group", "Code": "SENIOR", "Label": "Senior", "SortOrder": 4 }
+  { "Category": "age_group", "Code": "SENIOR", "Label": "Senior", "SortOrder": 4 },
+
+  { "Category": "partner_type", "Code": "IMPLEMENTING", "Label": "Implementing Partner", "SortOrder": 1 },
+  { "Category": "partner_type", "Code": "DONOR", "Label": "Donor Partner", "SortOrder": 2 },
+  { "Category": "partner_type", "Code": "GOVERNMENT", "Label": "Government Partner", "SortOrder": 3 },
+  { "Category": "partner_type", "Code": "ACADEMIC", "Label": "Academic Partner", "SortOrder": 4 },
+  { "Category": "partner_type", "Code": "COMMUNITY", "Label": "Community Partner", "SortOrder": 5 },
+  { "Category": "partner_type", "Code": "SUPPLIER", "Label": "Supplier Partner", "SortOrder": 6 },
+
+  { "Category": "volunteer_status", "Code": "ACTIVE", "Label": "Active", "SortOrder": 1 },
+  { "Category": "volunteer_status", "Code": "ON_LEAVE", "Label": "On Leave", "SortOrder": 2 },
+  { "Category": "volunteer_status", "Code": "INACTIVE", "Label": "Inactive", "SortOrder": 3 },
+
+  { "Category": "sponsorship_type", "Code": "CHILD", "Label": "Child Sponsorship", "SortOrder": 1 },
+  { "Category": "sponsorship_type", "Code": "ORPHAN", "Label": "Orphan Sponsorship", "SortOrder": 2 },
+  { "Category": "sponsorship_type", "Code": "FAMILY", "Label": "Family Sponsorship", "SortOrder": 3 },
+  { "Category": "sponsorship_type", "Code": "STUDENT", "Label": "Student Sponsorship", "SortOrder": 4 }
 ]

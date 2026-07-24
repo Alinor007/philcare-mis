@@ -1,4 +1,6 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.Partners.Domain;
+using philcare.Api.Features.Volunteers.Domain;
 
 namespace philcare.Api.Features.Programs.Domain;
 
@@ -21,7 +23,13 @@ public class Activity : Entity
     public DateTime? EndDate { get; set; }
     public decimal Budget { get; set; }
 
+    // Legacy free-text partner name — kept for one sprint alongside ImplementingPartnerId
+    // (existing free text can't be reliably auto-matched to a Partner row); drop in Sprint 5.
     public string? ImplementingPartner { get; set; }
+
+    public int? ImplementingPartnerId { get; set; }
+    public Partner? ImplementingPartnerRef { get; set; }
+
     public string? ResponsibleDepartment { get; set; }
     public string? SdgAlignment { get; set; }
     public string ImplementationStatus { get; set; } = "PLANNED"; // lookup: implementation_status
@@ -32,4 +40,5 @@ public class Activity : Entity
 
     public List<ActivityParticipant> ActivityParticipants { get; set; } = [];
     public List<Distribution> Distributions { get; set; } = [];
+    public List<ActivityVolunteer> ActivityVolunteers { get; set; } = [];
 }

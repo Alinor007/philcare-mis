@@ -3,6 +3,7 @@ using philcare.Api.Common.Domain;
 using philcare.Api.Common.Persistence;
 using philcare.Api.Features.Finance.Domain;
 using philcare.Api.Features.Programs.Domain;
+using philcare.Api.Features.Zakat.Domain;
 
 namespace philcare.Api.Features.Programs.Distributions.CreateDistribution;
 
@@ -32,6 +33,8 @@ public sealed class CreateDistributionHandler(AppDbContext db)
             }
         }
 
+        var zakatAsnaf = request.ZakatAsnaf;
+
         if (!string.IsNullOrWhiteSpace(request.FundingBucketCode))
         {
             var bucket = await db.FundingBuckets.FirstOrDefaultAsync(b => b.Code == request.FundingBucketCode, cancellationToken);
@@ -44,10 +47,32 @@ public sealed class CreateDistributionHandler(AppDbContext db)
             var isZakatProgramBucket = string.Equals(bucket.FundCode, FinanceRules.ZakatFundCode, StringComparison.OrdinalIgnoreCase)
                 && bucket.BucketType == BucketType.Program;
 
-            if (isZakatProgramBucket && string.IsNullOrWhiteSpace(request.ZakatAsnaf))
+            if (isZakatProgramBucket)
             {
-                return Result.Failure<CreateDistributionResponse>(
-                    Error.Validation("Distributions.ZakatAsnafRequired", "Zakat asnaf is required for distributions against the zakat program bucket."));
+                var approvedEligibility = await db.ZakatEligibilities
+                    .Where(z => z.ParticipantId == participant.Id
+                        && z.Status == ZakatEligibilityStatus.Approved
+                        && (z.ValidUntil == null || z.ValidUntil >= request.DistributionDate))
+                    .OrderByDescending(z => z.DecisionDate)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (approvedEligibility is null)
+                {
+                    return Result.Failure<CreateDistributionResponse>(
+                        Error.Validation("Distributions.ZakatEligibilityRequired",
+                            "This participant needs an approved, unexpired zakat eligibility case before a distribution can be recorded against the zakat program bucket."));
+                }
+
+                if (string.IsNullOrWhiteSpace(zakatAsnaf))
+                {
+                    zakatAsnaf = approvedEligibility.AsnafCategory;
+                }
+                else if (!string.Equals(zakatAsnaf, approvedEligibility.AsnafCategory, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Result.Failure<CreateDistributionResponse>(
+                        Error.Validation("Distributions.ZakatAsnafMismatch",
+                            "The provided zakat asnaf does not match the participant's approved eligibility asnaf category."));
+                }
             }
         }
 
@@ -64,7 +89,7 @@ public sealed class CreateDistributionHandler(AppDbContext db)
             FieldVerified = request.FieldVerified,
             ReceivedConfirmation = request.ReceivedConfirmation,
             ProcessedBy = request.ProcessedBy,
-            ZakatAsnaf = request.ZakatAsnaf,
+            ZakatAsnaf = zakatAsnaf,
             Notes = request.Notes,
             IsVoided = false
         };
@@ -75,6 +100,6 @@ public sealed class CreateDistributionHandler(AppDbContext db)
         return Result.Success(new CreateDistributionResponse(
             distribution.Id, distribution.DistributionType, distribution.ParticipantId, distribution.ActivityId,
             distribution.FundingBucketCode, distribution.Quantity, distribution.TotalValuePhp, distribution.DistributionDate,
-            distribution.IsVoided));
+            distribution.ZakatAsnaf, distribution.IsVoided));
     }
 }

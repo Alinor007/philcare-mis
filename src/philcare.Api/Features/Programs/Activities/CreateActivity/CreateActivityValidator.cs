@@ -17,6 +17,7 @@ public sealed class CreateActivityValidator : AbstractValidator<CreateActivityRe
         RuleFor(x => x.Region).MaximumLength(50);
         RuleFor(x => x.Budget).GreaterThanOrEqualTo(0);
         RuleFor(x => x.ImplementingPartner).MaximumLength(200);
+        RuleFor(x => x.ImplementingPartnerId).GreaterThan(0).When(x => x.ImplementingPartnerId is not null);
         RuleFor(x => x.ResponsibleDepartment).MaximumLength(200);
         RuleFor(x => x.SdgAlignment).MaximumLength(100);
         RuleFor(x => x.SafeguardingRisk).MaximumLength(100);

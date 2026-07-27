@@ -14,6 +14,7 @@ public sealed record CreateActivityRequest(
     DateTime? EndDate,
     decimal Budget,
     string? ImplementingPartner,
+    int? ImplementingPartnerId,
     string? ResponsibleDepartment,
     string? SdgAlignment,
     string? SafeguardingRisk,

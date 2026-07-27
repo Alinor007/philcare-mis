@@ -24,4 +24,5 @@ public sealed record CreateDistributionResponse(
     int Quantity,
     decimal TotalValuePhp,
     DateTime DistributionDate,
+    string? ZakatAsnaf,
     bool IsVoided);

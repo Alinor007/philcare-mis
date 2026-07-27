@@ -1,8 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Features.Auth.Domain;
 using philcare.Api.Features.Finance.Domain;
+using philcare.Api.Features.Partners.Domain;
 using philcare.Api.Features.Programs.Domain;
 using philcare.Api.Features.ReferenceData.Domain;
+using philcare.Api.Features.Sponsorships.Domain;
+using philcare.Api.Features.Volunteers.Domain;
+using philcare.Api.Features.Zakat.Domain;
 
 namespace philcare.Api.Common.Persistence;
 
@@ -28,6 +32,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Participant> Participants => Set<Participant>();
     public DbSet<ActivityParticipant> ActivityParticipants => Set<ActivityParticipant>();
     public DbSet<Distribution> Distributions => Set<Distribution>();
+
+    // Partners, Volunteers, Sponsorship, Zakat Eligibility — Sprint 4
+    public DbSet<Partner> Partners => Set<Partner>();
+    public DbSet<Volunteer> Volunteers => Set<Volunteer>();
+    public DbSet<ActivityVolunteer> ActivityVolunteers => Set<ActivityVolunteer>();
+    public DbSet<Sponsorship> Sponsorships => Set<Sponsorship>();
+    public DbSet<ZakatEligibility> ZakatEligibilities => Set<ZakatEligibility>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

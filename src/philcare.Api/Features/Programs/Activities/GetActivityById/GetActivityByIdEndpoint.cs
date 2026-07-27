@@ -20,6 +20,8 @@ public sealed record ActivityDetailResponse(
     DateTime? EndDate,
     decimal Budget,
     string? ImplementingPartner,
+    int? ImplementingPartnerId,
+    string? ImplementingPartnerName,
     string? ResponsibleDepartment,
     string? SdgAlignment,
     string ImplementationStatus,
@@ -41,6 +43,7 @@ public sealed class GetActivityByIdEndpoint : IEndpoint
                 .Select(a => new ActivityDetailResponse(
                     a.Id, a.ProjectId, a.Project.Name, a.Name, a.ActivityCategory, a.ActivityType, a.TargetGroup,
                     a.Barangay, a.City, a.Province, a.Region, a.StartDate, a.EndDate, a.Budget, a.ImplementingPartner,
+                    a.ImplementingPartnerId, a.ImplementingPartnerRef == null ? null : a.ImplementingPartnerRef.Name,
                     a.ResponsibleDepartment, a.SdgAlignment, a.ImplementationStatus, a.SafeguardingRisk, a.EvidenceLink,
                     a.Notes, a.IsActive, a.ActivityParticipants.Count, a.Distributions.Count))
                 .FirstOrDefaultAsync(ct);

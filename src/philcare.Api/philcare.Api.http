@@ -271,7 +271,9 @@ Content-Type: application/json
 GET {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/participants
 Authorization: Bearer {{token}}
 
-### Create distribution linked to Finance zakat program bucket (requires zakatAsnaf)
+### Create distribution linked to Finance zakat program bucket
+### (requires an Approved, unexpired zakat eligibility for the participant — see Zakat Eligibility section below;
+### zakatAsnaf may be omitted and is auto-filled from the approved case, or must match it if provided)
 POST {{philcare.Api_HostAddress}}/api/distributions
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -281,7 +283,6 @@ Content-Type: application/json
   "participantId": 1,
   "activityId": 1,
   "fundingBucketCode": "ZAK-PROG",
-  "zakatAsnaf": "FUQARA",
   "quantity": 1,
   "totalValuePhp": 1000,
   "distributionDate": "2026-07-20T00:00:00Z",
@@ -300,5 +301,178 @@ Authorization: Bearer {{token}}
 ### Distribution summary report
 GET {{philcare.Api_HostAddress}}/api/reports/distribution-summary
 Authorization: Bearer {{token}}
+
+### --- Partners module (Sprint 4) ---
+
+### Create partner
+POST {{philcare.Api_HostAddress}}/api/partners
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Al-Ihsan Foundation",
+  "partnerType": "IMPLEMENTING",
+  "contactPerson": "Juan Dela Cruz",
+  "email": "contact@alihsan.org.ph",
+  "mouReference": "MOU-2026-014"
+}
+
+### List partners (filters: partnerType, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/partners
+Authorization: Bearer {{token}}
+
+### Get partner detail (replace {{partnerId}})
+GET {{philcare.Api_HostAddress}}/api/partners/{{partnerId}}
+Authorization: Bearer {{token}}
+
+### Link an activity to a partner (replace projectId/implementingPartnerId as needed)
+POST {{philcare.Api_HostAddress}}/api/activities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "projectId": 1,
+  "name": "Food Pack Distribution - Batch 2",
+  "activityType": "RELIEF_DISTRIBUTION",
+  "region": "NCR",
+  "budget": 100000,
+  "implementingPartnerId": 1
+}
+
+### Deactivate partner (Admin only)
+DELETE {{philcare.Api_HostAddress}}/api/partners/{{partnerId}}
+Authorization: Bearer {{token}}
+
+### --- Volunteers module (Sprint 4) ---
+
+### Create volunteer
+POST {{philcare.Api_HostAddress}}/api/volunteers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Maria Santos",
+  "gender": "Female",
+  "phone": "09171234567",
+  "orientationCompleted": true,
+  "orientationDate": "2026-06-01T00:00:00Z",
+  "codeOfConductSigned": true,
+  "codeOfConductDate": "2026-06-01T00:00:00Z",
+  "policeClearanceOnFile": true
+}
+
+### List volunteers (filters: status, orientationCompleted, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/volunteers
+Authorization: Bearer {{token}}
+
+### Get volunteer detail (replace {{volunteerId}})
+GET {{philcare.Api_HostAddress}}/api/volunteers/{{volunteerId}}
+Authorization: Bearer {{token}}
+
+### Enroll a volunteer into an activity (blocked with 400 if the activity has a SafeguardingRisk
+### and the volunteer's OrientationCompleted is false — replace {{activityId}})
+POST {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/volunteers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "volunteerId": 1,
+  "roleInActivity": "Logistics Coordinator"
+}
+
+### Get activity volunteer roster
+GET {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/volunteers
+Authorization: Bearer {{token}}
+
+### Deactivate volunteer (Admin only)
+DELETE {{philcare.Api_HostAddress}}/api/volunteers/{{volunteerId}}
+Authorization: Bearer {{token}}
+
+### --- Sponsorships module (Sprint 4) ---
+
+### Create sponsorship pledge (Donor from Finance + Participant from Programs)
+POST {{philcare.Api_HostAddress}}/api/sponsorships
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "donorId": 1,
+  "participantId": 1,
+  "sponsorshipType": "CHILD",
+  "monthlyAmountPhp": 1500,
+  "startDate": "2026-07-01T00:00:00Z",
+  "caseWorker": "Aisha Rahman"
+}
+
+### List sponsorships (filters: donorId, participantId, status, sponsorshipType)
+GET {{philcare.Api_HostAddress}}/api/sponsorships
+Authorization: Bearer {{token}}
+
+### Get sponsorship detail (replace {{sponsorshipId}})
+GET {{philcare.Api_HostAddress}}/api/sponsorships/{{sponsorshipId}}
+Authorization: Bearer {{token}}
+
+### Change sponsorship status (Active -> Paused / Ended, Paused -> Active / Ended)
+POST {{philcare.Api_HostAddress}}/api/sponsorships/{{sponsorshipId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "status": "Paused"
+}
+
+### Sponsorship summary report
+GET {{philcare.Api_HostAddress}}/api/reports/sponsorship-summary
+Authorization: Bearer {{token}}
+
+### --- Zakat Eligibility workflow (Sprint 4) ---
+
+### Create zakat eligibility case (starts as Draft)
+POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "participantId": 1,
+  "asnafCategory": "FUQARA",
+  "monthlyIncomePhp": 3000,
+  "householdSize": 4,
+  "assessmentDate": "2026-07-20T00:00:00Z",
+  "assessedBy": "Case Worker A"
+}
+
+### List zakat eligibility cases (filters: participantId, status, asnaf)
+GET {{philcare.Api_HostAddress}}/api/zakat-eligibilities
+Authorization: Bearer {{token}}
+
+### Get zakat eligibility detail (replace {{eligibilityId}})
+GET {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}
+Authorization: Bearer {{token}}
+
+### Submit case for approval (Draft -> Submitted)
+POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/submit
+Authorization: Bearer {{token}}
+
+### Approve case (Admin only; ValidUntil defaults to +12 months if omitted)
+POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "approve": true,
+  "decidedBy": "Admin Reviewer",
+  "validUntil": "2027-07-20T00:00:00Z"
+}
+
+### Reject case (Admin only; rejectionReason required)
+POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "approve": false,
+  "decidedBy": "Admin Reviewer",
+  "rejectionReason": "Household income exceeds asnaf threshold."
+}
 
 ###

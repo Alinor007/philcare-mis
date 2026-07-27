@@ -13,6 +13,7 @@ public sealed record UpdateActivityRequest(
     DateTime? EndDate,
     decimal Budget,
     string? ImplementingPartner,
+    int? ImplementingPartnerId,
     string? ResponsibleDepartment,
     string? SdgAlignment,
     string ImplementationStatus,

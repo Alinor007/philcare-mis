@@ -38,5 +38,10 @@ public class ActivityConfiguration : IEntityTypeConfiguration<Activity>
             .WithMany(p => p.Activities)
             .HasForeignKey(a => a.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(a => a.ImplementingPartnerRef)
+            .WithMany(p => p.Activities)
+            .HasForeignKey(a => a.ImplementingPartnerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -29,9 +29,21 @@ using philcare.Api.Features.Programs.Participants.CreateParticipant;
 using philcare.Api.Features.Programs.Participants.UpdateParticipant;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Api.Features.Programs.Projects.UpdateProject;
+using philcare.Api.Features.Partners.CreatePartner;
+using philcare.Api.Features.Partners.UpdatePartner;
 using philcare.Api.Features.ReferenceData.CreateLookup;
 using philcare.Api.Features.ReferenceData.UpdateLookup;
+using philcare.Api.Features.Sponsorships.ChangeSponsorshipStatus;
+using philcare.Api.Features.Sponsorships.CreateSponsorship;
+using philcare.Api.Features.Sponsorships.UpdateSponsorship;
 using philcare.Api.Features.Users.UpdateUser;
+using philcare.Api.Features.Volunteers.ActivityVolunteers.AddActivityVolunteer;
+using philcare.Api.Features.Volunteers.CreateVolunteer;
+using philcare.Api.Features.Volunteers.UpdateVolunteer;
+using philcare.Api.Features.Zakat.CreateZakatEligibility;
+using philcare.Api.Features.Zakat.DecideZakatEligibility;
+using philcare.Api.Features.Zakat.SubmitZakatEligibility;
+using philcare.Api.Features.Zakat.UpdateZakatEligibility;
 using philcare.Api.Infrastructure.Seed;
 
 namespace philcare.Api.Infrastructure;
@@ -141,6 +153,20 @@ public static class DependencyInjection
         services.AddScoped<UpdateParticipantHandler>();
         services.AddScoped<AddActivityParticipantHandler>();
         services.AddScoped<CreateDistributionHandler>();
+
+        // Partners, Volunteers, Sponsorship, Zakat Eligibility — Sprint 4
+        services.AddScoped<CreatePartnerHandler>();
+        services.AddScoped<UpdatePartnerHandler>();
+        services.AddScoped<CreateVolunteerHandler>();
+        services.AddScoped<UpdateVolunteerHandler>();
+        services.AddScoped<AddActivityVolunteerHandler>();
+        services.AddScoped<CreateSponsorshipHandler>();
+        services.AddScoped<UpdateSponsorshipHandler>();
+        services.AddScoped<ChangeSponsorshipStatusHandler>();
+        services.AddScoped<CreateZakatEligibilityHandler>();
+        services.AddScoped<UpdateZakatEligibilityHandler>();
+        services.AddScoped<SubmitZakatEligibilityHandler>();
+        services.AddScoped<DecideZakatEligibilityHandler>();
 
         return services;
     }

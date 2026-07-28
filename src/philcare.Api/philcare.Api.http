@@ -177,7 +177,60 @@ GET {{philcare.Api_HostAddress}}/api/reports/donor-utilization/{{donorId}}
 Authorization: Bearer {{token}}
 
 ### Restricted fund ledger — opening balance + movements for ZAKA-FUND / REST-FUND / CAPX-FUND
+### (income allocations now appear as "INC-{id}"; donations as "DON-{id}")
 GET {{philcare.Api_HostAddress}}/api/reports/restricted-ledger?year=2026
+Authorization: Bearer {{token}}
+
+### --- Other Income module (Sprint 4) ---
+### Non-donation inflows — capital/investment returns, grants, waqf/endowment, etc (see income_type
+### lookup). Unlike donations, the full amount allocates 100% into ONE chosen funding bucket — no
+### program/admin split. Cannot target a zakat fund bucket (zakat money enters only via donations).
+
+### Record capital income (rental/investment/asset returns) into the Capital fund bucket
+POST {{philcare.Api_HostAddress}}/api/other-income
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "incomeType": "CAPITAL_INCOME",
+  "source": "Rental income - PhilCare office annex",
+  "dateReceived": "2026-07-20T00:00:00Z",
+  "amountOriginal": 50000,
+  "currency": "PHP",
+  "fxRateToPhp": 1,
+  "fundingBucketCode": "CAPX-FUND",
+  "receiptNo": "INC-2026-001"
+}
+
+### Example: targeting a zakat bucket is rejected (400 OtherIncome.ZakatFundNotAllowed)
+# POST {{philcare.Api_HostAddress}}/api/other-income
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# {
+#   "incomeType": "GRANT",
+#   "source": "Should be rejected",
+#   "dateReceived": "2026-07-20T00:00:00Z",
+#   "amountOriginal": 10000,
+#   "currency": "PHP",
+#   "fxRateToPhp": 1,
+#   "fundingBucketCode": "ZAK-PROG"
+# }
+
+### List other income (filters: incomeType, fundingBucketCode, from, to, includeVoided)
+GET {{philcare.Api_HostAddress}}/api/other-income
+Authorization: Bearer {{token}}
+
+### Get other income detail incl. allocation line (replace {{incomeId}})
+GET {{philcare.Api_HostAddress}}/api/other-income/{{incomeId}}
+Authorization: Bearer {{token}}
+
+### Void other income (Admin only; blocked if its bucket's funds are already spent)
+DELETE {{philcare.Api_HostAddress}}/api/other-income/{{incomeId}}
+Authorization: Bearer {{token}}
+
+### Income summary report — total by income_type (optional ?year=)
+GET {{philcare.Api_HostAddress}}/api/reports/income-summary?year=2026
 Authorization: Bearer {{token}}
 
 ### --- Programs module ---

@@ -19,6 +19,8 @@ using philcare.Api.Features.Finance.Donors.CreateDonor;
 using philcare.Api.Features.Finance.Donors.UpdateDonor;
 using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Api.Features.Finance.Expenses.VoidExpense;
+using philcare.Api.Features.Finance.OtherIncomes.CreateOtherIncome;
+using philcare.Api.Features.Finance.OtherIncomes.VoidOtherIncome;
 using philcare.Api.Features.Programs.ActivityParticipants.AddActivityParticipant;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.Activities.UpdateActivity;
@@ -141,6 +143,8 @@ public static class DependencyInjection
         services.AddScoped<VoidDonationHandler>();
         services.AddScoped<CreateExpenseHandler>();
         services.AddScoped<VoidExpenseHandler>();
+        services.AddScoped<CreateOtherIncomeHandler>();
+        services.AddScoped<VoidOtherIncomeHandler>();
 
         // Programs handlers — Sprint 3
         services.AddScoped<CreateProgramHandler>();

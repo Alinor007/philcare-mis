@@ -7,13 +7,15 @@ public enum AllocationType
     Program,
     Admin,
     Amil,
-    Opening
+    Opening,
+    Income
 }
 
 /// <summary>
 /// A single ledger line produced by splitting a donation's gross amount into a target
-/// funding bucket. A donation typically produces one Program line and, when admin/amil
-/// is allowed, one Admin or Amil line.
+/// funding bucket, or by a non-donation OtherIncome receipt (AllocationType.Income, rate 1.0,
+/// no program/admin split). A donation typically produces one Program line and, when
+/// admin/amil is allowed, one Admin or Amil line; an OtherIncome produces exactly one line.
 /// </summary>
 public class Allocation : Entity
 {
@@ -21,6 +23,9 @@ public class Allocation : Entity
 
     public int? DonationId { get; set; }
     public Donation? Donation { get; set; }
+
+    public int? OtherIncomeId { get; set; }
+    public OtherIncome? OtherIncome { get; set; }
 
     public string SourceFundCode { get; set; } = string.Empty;
     public Fund SourceFund { get; set; } = null!;

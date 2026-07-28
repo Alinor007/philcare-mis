@@ -123,5 +123,16 @@
   { "Category": "sponsorship_type", "Code": "CHILD", "Label": "Child Sponsorship", "SortOrder": 1 },
   { "Category": "sponsorship_type", "Code": "ORPHAN", "Label": "Orphan Sponsorship", "SortOrder": 2 },
   { "Category": "sponsorship_type", "Code": "FAMILY", "Label": "Family Sponsorship", "SortOrder": 3 },
-  { "Category": "sponsorship_type", "Code": "STUDENT", "Label": "Student Sponsorship", "SortOrder": 4 }
+  { "Category": "sponsorship_type", "Code": "STUDENT", "Label": "Student Sponsorship", "SortOrder": 4 },
+
+  { "Category": "income_type", "Code": "CAPITAL_INCOME", "Label": "Capital Income (Rental, Investment & Asset Returns)", "SortOrder": 1 },
+  { "Category": "income_type", "Code": "GRANT", "Label": "Grant", "SortOrder": 2 },
+  { "Category": "income_type", "Code": "WAQF_ENDOWMENT", "Label": "Waqf / Endowment Income", "SortOrder": 3 },
+  { "Category": "income_type", "Code": "GOVERNMENT_SUPPORT", "Label": "Government / LGU Support", "SortOrder": 4 },
+  { "Category": "income_type", "Code": "PARTNER_CONTRIBUTION", "Label": "Partner Contribution", "SortOrder": 5 },
+  { "Category": "income_type", "Code": "IN_KIND", "Label": "In-Kind Contribution", "SortOrder": 6 },
+  { "Category": "income_type", "Code": "INTERNAL_FUND", "Label": "Internal Fund Transfer", "SortOrder": 7 },
+  { "Category": "income_type", "Code": "EARNED_INCOME", "Label": "Earned Income (Fees & Services)", "SortOrder": 8 },
+  { "Category": "income_type", "Code": "RESERVE_FUND", "Label": "Reserve Fund Draw", "SortOrder": 9 },
+  { "Category": "income_type", "Code": "OTHER", "Label": "Other Income", "SortOrder": 10 }
 ]

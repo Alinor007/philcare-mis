@@ -411,6 +411,81 @@ FINAL POLISH PASS (whole app):
 
 ---
 
+## Prompt 14 — Governance
+
+```text
+Build the Governance module under /governance (Admin-write, any-authenticated-read, same as the rest of the app). This models the org's board/committee structure, meetings, and minutes.
+
+KEY MODELING FACT: there is no separate "Board Trustees" or "Executive Team" entity. A person's board/executive membership is an Assignment (person × org body × role, with dates and a Current/Former status). The roster for any body comes from GET /api/governance/bodies/{id}/members, which resolves Current assignments live — don't try to build a separate "board members" screen from a dedicated endpoint, because there isn't one.
+
+ORG BODIES (self-referencing hierarchy — General Assembly → Board of Trustees → Executive Management → committees/units):
+- GET /api/governance/bodies?bodyType=&includeInactive= → [{id, name, bodyType, parentBodyId?, parentBodyName?, isActive}]
+- GET /api/governance/bodies/{id} → +{quorumRule?, decisionThreshold?, meetingFrequency?, policyBasis?, notes?, currentMemberCount, childBodies: [{id, name, bodyType}]}
+- GET /api/governance/bodies/{id}/members?asOf=&includeFormer= → [{personId, personFullName, assignmentId, roleName, positionTitle?, isPrimary, votingRights, startDate, endDate?, status}] — THIS is the board/exec roster.
+- POST /api/governance/bodies {name, bodyType, parentBodyId?, quorumRule?, decisionThreshold?, meetingFrequency?, policyBasis?, notes?} → 201. Duplicate name → 409; unknown parent → 404.
+- PUT /api/governance/bodies/{id} same + {isActive} → 200. Setting a parent that would create a cycle → 400 "Governance.CircularBodyHierarchy" — show this inline, it means the chosen parent is (transitively) this body's own child.
+- DELETE /api/governance/bodies/{id} → 204. 409 "Governance.BodyInUse" if it has active child bodies or current assignments — show detail.
+Note quorumRule/decisionThreshold are FREE TEXT policy strings from the org's governance manual (e.g. "50% + 1", "75% for strategic decisions") — display them as-is, don't try to parse/compute with them.
+
+PEOPLE:
+- GET /api/governance/people?personCategory=&status=&includeInactive= → [{id, fullName, personCategory, status, isActive}]
+- GET /api/governance/people/{id} → +{email?, contactNumber?, defaultVotingRights, volunteerId?, notes?, assignmentCount}
+- POST /api/governance/people {fullName, personCategory, email?, contactNumber?, defaultVotingRights, volunteerId?, notes?} → 201, status starts ACTIVE
+- PUT /api/governance/people/{id} same + {status, isActive} → 200
+- DELETE /api/governance/people/{id} → 204
+personCategory ← lookup "person_category" (BOARD/EXECUTIVE/MEMBER); status ← "person_status".
+
+GOVERNANCE ROLES:
+- GET /api/governance/roles?roleCategory=&includeInactive= → [{id, name, roleCategory, isActive}]
+- GET /api/governance/roles/{id} → +{defaultBodyId?, defaultBodyName?, defaultVotingRights?, countsForQuorum?, delegable?, notes?}
+- POST /api/governance/roles {name, roleCategory, defaultBodyId?, defaultVotingRights?, countsForQuorum?, delegable?, notes?} → 201
+- PUT /api/governance/roles/{id} same + {isActive} → 200
+roleCategory ← lookup "governance_role_category". defaultVotingRights/countsForQuorum/delegable are free-text rules ("Depends on body", "Yes if eligible") — text inputs, not toggles.
+
+ASSIGNMENTS (person holds a role in a body):
+- GET /api/governance/assignments?personId=&bodyId=&roleId=&status= → [{id, personId, personFullName, orgBodyId, orgBodyName, governanceRoleId, governanceRoleName, isPrimary, status}]
+- GET /api/governance/assignments/{id} → +{positionTitle?, startDate, endDate?, votingRights, isTemporary, notes?}
+- POST /api/governance/assignments {personId, orgBodyId, governanceRoleId, positionTitle?, startDate, isPrimary, votingRights, isTemporary, notes?} → 201, status starts Current. 409 "Governance.DuplicatePrimaryAssignment" if this person already has a primary current assignment elsewhere — explain in the UI that a person can only have ONE primary role at a time (non-primary/secondary assignments are unlimited).
+- PUT /api/governance/assignments/{id} {positionTitle?, isPrimary, votingRights, isTemporary, notes?} → 200 (same 409 rule applies)
+- POST /api/governance/assignments/{id}/end {endDate?} → {id, status, endDate} — terminal, ends the assignment (defaults endDate to today).
+Create form: person combobox, org body combobox, role combobox (optionally filtered to the role's defaultBodyId), start date, primary/voting/temporary checkboxes.
+
+MEETINGS:
+- GET /api/governance/meetings?bodyId=&meetingType=&status=&from=&to= → [{id, orgBodyId, orgBodyName, meetingType, meetingDate, status, hasMinutes}]
+- GET /api/governance/meetings/{id} → +{mode, calledBy?, chairPersonId?, chairPersonName?, secretaryPersonId?, secretaryPersonName?, quorumRequired?, decisionThreshold?, publicationDeadline?, notes?, participantCount, hasMinutes}
+- POST /api/governance/meetings {orgBodyId, meetingType, meetingDate, mode, calledBy?, chairPersonId?, secretaryPersonId?, publicationDeadline?, notes?} → 201, status starts Scheduled. quorumRequired/decisionThreshold are auto-copied from the body (don't send them) and publicationDeadline defaults to meetingDate+10 days if omitted.
+- PUT /api/governance/meetings/{id} {meetingType, meetingDate, mode, calledBy?, chairPersonId?, secretaryPersonId?, status, publicationDeadline?, notes?} → 200. status is a select: Scheduled/Held/Cancelled/Postponed — marking a meeting Held is what unlocks recording minutes.
+- GET /api/governance/meetings/{id}/quorum → {meetingId, eligibleCount, presentCount, countsForQuorumPresentCount, presentPercentage?, quorumRequired?, decisionThreshold?}. Show as a stat strip on the meeting detail page: "X of Y eligible present (Z%)" alongside the raw policy text — do not compute a pass/fail verdict, the org's rule is often conditional prose.
+meetingType ← lookup "meeting_type"; mode ← "meeting_mode".
+
+MEETING PARTICIPANTS (roster + attendance/voting):
+- GET /api/governance/meetings/{meetingId}/participants → [{personId, personFullName, roleInMeeting?, attendanceStatus, votingRight, countsForQuorum}]
+- POST /api/governance/meetings/{meetingId}/participants {personId, assignmentId?, roleInMeeting?, attendanceStatus, votingRight, countsForQuorum, participationMode?, remarks?} → 201. 409 if already added; 400 "Governance.AssignmentPersonMismatch" if the chosen assignmentId doesn't belong to the chosen person — when a person combobox is selected, filter the assignment dropdown to that person's assignments only to avoid this.
+- DELETE /api/governance/meetings/{meetingId}/participants/{personId} → 204
+attendanceStatus ← lookup "attendance_status"; roleInMeeting ← "meeting_role"; participationMode ← "meeting_mode".
+
+MINUTES + DECISIONS (minutes are 1:1 per meeting; decisions are a separate list under a minutes record):
+- GET /api/governance/meetings/{meetingId}/minutes → {id, meetingId, preparedByPersonId?, preparedByPersonName?, approvedByPersonId?, approvedByPersonName?, summary?, nextMeetingDate?, documentLink?, publicationStatus, decisionCount}
+- POST /api/governance/meetings/{meetingId}/minutes {preparedByPersonId?, approvedByPersonId?, summary?, nextMeetingDate?, documentLink?} → 201, status starts Draft. 400 "Governance.MeetingNotHeld" if the meeting isn't Held yet; 409 "Governance.MinutesAlreadyExist" if minutes already exist — route the user to edit instead.
+- PUT /api/governance/meetings/{meetingId}/minutes same + {publicationStatus} → 200. publicationStatus select: Draft/Submitted/Approved/Published/Returned. 409 "Governance.MinutesPublished" once Published — lock the edit form and show a read-only view instead.
+- GET /api/governance/minutes/{minutesId}/decisions → [{id, decisionText, actionPoints?, responsiblePersonId?, responsiblePersonName?, dueDate?, decisionStatus}]
+- POST /api/governance/minutes/{minutesId}/decisions {decisionText, actionPoints?, responsiblePersonId?, dueDate?, decisionStatus, notes?} → 201. Also 409 once minutes are Published.
+- PUT /api/governance/decisions/{id} same → 200
+decisionStatus ← lookup "decision_status" (OPEN/IN_PROGRESS/COMPLETED/CANCELLED).
+
+Screens:
+1. /governance/bodies — hierarchy tree or indented list (use parentBodyId to nest), body type badges, click into detail showing policy fields + child bodies + "View current members" (→ bodies/{id}/members) + "Meetings" tab (→ meetings?bodyId=).
+2. /governance/people — list/detail/form as usual; person detail shows an "Assignments" tab (assignments?personId=) and a "Meetings attended" tab if you have time.
+3. /governance/roles — simple list/detail/form.
+4. Assignment management lives on the Person detail page and the OrgBody detail page (both link to a shared "New assignment" dialog prefilling whichever side you came from).
+5. /governance/meetings — list (filters: body, type, status, date range) → detail page with tabs: Overview (quorum stat strip + policy text), Participants (roster + add-participant dialog), Minutes (create/edit/publish flow, nested Decisions list with add/edit).
+6. Governance summary widget on the main dashboard (optional) or its own /governance report page: GET /api/reports/governance-summary?from=&to= → [{orgBodyId, orgBodyName, currentMemberCount, meetingsHeld, minutesPublished, minutesPending, openDecisions}].
+
+Add "Governance" to the sidebar nav group list from Prompt 2 (Admin-focused, but readable by everyone).
+```
+
+---
+
 ## Endpoint coverage checklist
 
-Every API endpoint appears in exactly one prompt: Auth 7 (P0/P2, register in P13), Users 3 (P13), Lookups 5 (P0 read, P13 manage), Donors 4 (P4), Donations 4 (P5), Other Income 4 (P6), Expenses 4 (P6), Funds 1 + Buckets 2 (P7), Finance reports 7 (P3/P7), Programs 5 / Projects 4 / Activities 4 (P8), Participants 4 + Roster 3 + Distributions 4 + Program reports 2 (P9/P3), Partners 5 (P10), Volunteers 5 + Volunteer roster 3 (P10), Sponsorships 5 + report 1 (P11), Zakat 6 (P12) — **82 endpoints**.
+Every API endpoint appears in exactly one prompt: Auth 7 (P0/P2, register in P13), Users 3 (P13), Lookups 5 (P0 read, P13 manage), Donors 4 (P4), Donations 4 (P5), Other Income 4 (P6), Expenses 4 (P6), Funds 1 + Buckets 2 (P7), Finance reports 7 (P3/P7), Programs 5 / Projects 4 / Activities 4 (P8), Participants 4 + Roster 3 + Distributions 4 + Program reports 2 (P9/P3), Partners 5 (P10), Volunteers 5 + Volunteer roster 3 (P10), Sponsorships 5 + report 1 (P11), Zakat 6 (P12), **Governance 35** (P14: People 5, OrgBodies 6, Roles 4, Assignments 5, Meetings 5, MeetingParticipants 3, Minutes 3, Decisions 3, governance-summary report 1) — **129 endpoints** as of Sprint 5. (Donor Engagements — Create/Update/List, 3 endpoints — shipped in the same sprint as Governance but is not yet covered by a dedicated prompt; fold it into Prompt 4 alongside Donors when picking this playbook back up.)

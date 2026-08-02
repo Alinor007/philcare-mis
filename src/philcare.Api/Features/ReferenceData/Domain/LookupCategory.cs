@@ -18,4 +18,22 @@ public static class LookupCategory
     public const string IncomeType = "income_type";
     public const string EngagementType = "engagement_type";
     public const string BeneficiaryType = "beneficiary_type";
+
+    // Pre-existing categories that were seeded without a matching constant.
+    public const string AgeGroup = "age_group";
+    public const string ImplementationStatus = "implementation_status";
+    public const string ParticipantType = "participant_type";
+    public const string ProgramCategory = "program_category";
+    public const string VulnerabilityCategory = "vulnerability_category";
+
+    // Governance — Sprint 5
+    public const string PersonCategory = "person_category";
+    public const string PersonStatus = "person_status";
+    public const string OrgBodyType = "org_body_type";
+    public const string GovernanceRoleCategory = "governance_role_category";
+    public const string MeetingType = "meeting_type";
+    public const string MeetingMode = "meeting_mode";
+    public const string AttendanceStatus = "attendance_status";
+    public const string MeetingRole = "meeting_role";
+    public const string DecisionStatus = "decision_status";
 }

@@ -23,6 +23,21 @@ using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Api.Features.Finance.Expenses.VoidExpense;
 using philcare.Api.Features.Finance.OtherIncomes.CreateOtherIncome;
 using philcare.Api.Features.Finance.OtherIncomes.VoidOtherIncome;
+using philcare.Api.Features.Governance.Assignments.CreateAssignment;
+using philcare.Api.Features.Governance.Assignments.UpdateAssignment;
+using philcare.Api.Features.Governance.Decisions.CreateDecision;
+using philcare.Api.Features.Governance.Decisions.UpdateDecision;
+using philcare.Api.Features.Governance.Meetings.CreateMeeting;
+using philcare.Api.Features.Governance.Meetings.UpdateMeeting;
+using philcare.Api.Features.Governance.MeetingParticipants.AddMeetingParticipant;
+using philcare.Api.Features.Governance.Minutes.CreateMinutes;
+using philcare.Api.Features.Governance.Minutes.UpdateMinutes;
+using philcare.Api.Features.Governance.OrgBodies.CreateOrgBody;
+using philcare.Api.Features.Governance.OrgBodies.UpdateOrgBody;
+using philcare.Api.Features.Governance.People.CreatePerson;
+using philcare.Api.Features.Governance.People.UpdatePerson;
+using philcare.Api.Features.Governance.Roles.CreateGovernanceRole;
+using philcare.Api.Features.Governance.Roles.UpdateGovernanceRole;
 using philcare.Api.Features.Programs.ActivityParticipants.AddActivityParticipant;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.Activities.UpdateActivity;
@@ -177,6 +192,23 @@ public static class DependencyInjection
         // Donor engagement workflow — Sprint 5
         services.AddScoped<CreateDonorEngagementHandler>();
         services.AddScoped<UpdateDonorEngagementHandler>();
+
+        // Governance handlers — Sprint 5
+        services.AddScoped<CreatePersonHandler>();
+        services.AddScoped<UpdatePersonHandler>();
+        services.AddScoped<CreateOrgBodyHandler>();
+        services.AddScoped<UpdateOrgBodyHandler>();
+        services.AddScoped<CreateGovernanceRoleHandler>();
+        services.AddScoped<UpdateGovernanceRoleHandler>();
+        services.AddScoped<CreateAssignmentHandler>();
+        services.AddScoped<UpdateAssignmentHandler>();
+        services.AddScoped<CreateMeetingHandler>();
+        services.AddScoped<UpdateMeetingHandler>();
+        services.AddScoped<AddMeetingParticipantHandler>();
+        services.AddScoped<CreateMinutesHandler>();
+        services.AddScoped<UpdateMinutesHandler>();
+        services.AddScoped<CreateDecisionHandler>();
+        services.AddScoped<UpdateDecisionHandler>();
 
         return services;
     }

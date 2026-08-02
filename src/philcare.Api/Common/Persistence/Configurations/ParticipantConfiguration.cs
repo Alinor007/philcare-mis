@@ -14,6 +14,7 @@ public class ParticipantConfiguration : IEntityTypeConfiguration<Participant>
 
         builder.Property(p => p.FullName).IsRequired().HasMaxLength(200);
         builder.Property(p => p.ParticipantType).IsRequired().HasMaxLength(50);
+        builder.Property(p => p.BeneficiaryType).IsRequired().HasMaxLength(50).HasDefaultValue("INDIVIDUAL");
 
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(20).IsRequired();
 

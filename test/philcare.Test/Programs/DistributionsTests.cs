@@ -45,6 +45,7 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });

@@ -15,6 +15,8 @@ using philcare.Api.Features.Auth.RevokeAllSessions;
 using philcare.Api.Features.Auth.Services;
 using philcare.Api.Features.Finance.Donations.CreateDonation;
 using philcare.Api.Features.Finance.Donations.VoidDonation;
+using philcare.Api.Features.Finance.DonorEngagements.CreateDonorEngagement;
+using philcare.Api.Features.Finance.DonorEngagements.UpdateDonorEngagement;
 using philcare.Api.Features.Finance.Donors.CreateDonor;
 using philcare.Api.Features.Finance.Donors.UpdateDonor;
 using philcare.Api.Features.Finance.Expenses.CreateExpense;
@@ -171,6 +173,10 @@ public static class DependencyInjection
         services.AddScoped<UpdateZakatEligibilityHandler>();
         services.AddScoped<SubmitZakatEligibilityHandler>();
         services.AddScoped<DecideZakatEligibilityHandler>();
+
+        // Donor engagement workflow — Sprint 5
+        services.AddScoped<CreateDonorEngagementHandler>();
+        services.AddScoped<UpdateDonorEngagementHandler>();
 
         return services;
     }

@@ -134,5 +134,19 @@
   { "Category": "income_type", "Code": "INTERNAL_FUND", "Label": "Internal Fund Transfer", "SortOrder": 7 },
   { "Category": "income_type", "Code": "EARNED_INCOME", "Label": "Earned Income (Fees & Services)", "SortOrder": 8 },
   { "Category": "income_type", "Code": "RESERVE_FUND", "Label": "Reserve Fund Draw", "SortOrder": 9 },
-  { "Category": "income_type", "Code": "OTHER", "Label": "Other Income", "SortOrder": 10 }
+  { "Category": "income_type", "Code": "OTHER", "Label": "Other Income", "SortOrder": 10 },
+
+  { "Category": "engagement_type", "Code": "CALL", "Label": "Phone Call", "SortOrder": 1 },
+  { "Category": "engagement_type", "Code": "EMAIL", "Label": "Email", "SortOrder": 2 },
+  { "Category": "engagement_type", "Code": "MEETING", "Label": "Meeting", "SortOrder": 3 },
+  { "Category": "engagement_type", "Code": "VISIT", "Label": "Site / Office Visit", "SortOrder": 4 },
+  { "Category": "engagement_type", "Code": "EVENT", "Label": "Event Attendance", "SortOrder": 5 },
+  { "Category": "engagement_type", "Code": "THANK_YOU", "Label": "Thank-You / Acknowledgement", "SortOrder": 6 },
+  { "Category": "engagement_type", "Code": "KYD_REVIEW", "Label": "KYD Review Contact", "SortOrder": 7 },
+  { "Category": "engagement_type", "Code": "COMPLAINT", "Label": "Complaint / Concern", "SortOrder": 8 },
+  { "Category": "engagement_type", "Code": "OTHER", "Label": "Other", "SortOrder": 9 },
+
+  { "Category": "beneficiary_type", "Code": "INDIVIDUAL", "Label": "Individual", "SortOrder": 1 },
+  { "Category": "beneficiary_type", "Code": "INSTITUTION", "Label": "Institution (school, madrasah, etc.)", "SortOrder": 2 },
+  { "Category": "beneficiary_type", "Code": "COMMUNITY_ORGANIZATION", "Label": "Community Organization", "SortOrder": 3 }
 ]

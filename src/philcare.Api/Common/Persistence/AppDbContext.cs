@@ -23,6 +23,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Donor> Donors => Set<Donor>();
     public DbSet<Donation> Donations => Set<Donation>();
     public DbSet<OtherIncome> OtherIncomes => Set<OtherIncome>();
+    public DbSet<DonorEngagement> DonorEngagements => Set<DonorEngagement>();
     public DbSet<Allocation> Allocations => Set<Allocation>();
     public DbSet<Expense> Expenses => Set<Expense>();
 

@@ -17,6 +17,7 @@ public sealed class UpdateParticipantHandler(AppDbContext db)
 
         participant.FullName = request.FullName;
         participant.ParticipantType = request.ParticipantType;
+        participant.BeneficiaryType = request.BeneficiaryType;
         participant.Gender = request.Gender;
         participant.AgeGroup = request.AgeGroup;
         participant.Phone = request.Phone;
@@ -35,6 +36,6 @@ public sealed class UpdateParticipantHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateParticipantResponse(
-            participant.Id, participant.FullName, participant.ParticipantType, participant.Gender, participant.Status, participant.IsActive));
+            participant.Id, participant.FullName, participant.ParticipantType, participant.BeneficiaryType, participant.Gender, participant.Status, participant.IsActive));
     }
 }

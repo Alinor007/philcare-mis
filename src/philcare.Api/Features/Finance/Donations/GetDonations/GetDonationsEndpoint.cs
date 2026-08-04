@@ -5,7 +5,8 @@ using philcare.Api.Common.Persistence;
 namespace philcare.Api.Features.Finance.Donations.GetDonations;
 
 public sealed record DonationListItemResponse(
-    int Id, int DonorId, string DonorName, decimal AmountPhp, string FundCode, DateTime DateReceived, bool IsVoided);
+    int Id, int DonorId, string DonorName, decimal AmountPhp, string FundCode, DateTime DateReceived, bool IsVoided,
+    string? ReceiptNo, string? Purpose, string Channel);
 
 public sealed class GetDonationsEndpoint : IEndpoint
 {
@@ -49,7 +50,9 @@ public sealed class GetDonationsEndpoint : IEndpoint
 
             var donations = await query
                 .OrderByDescending(d => d.DateReceived)
-                .Select(d => new DonationListItemResponse(d.Id, d.DonorId, d.Donor.Name, d.AmountPhp, d.FundCode, d.DateReceived, d.IsVoided))
+                .Select(d => new DonationListItemResponse(
+                    d.Id, d.DonorId, d.Donor.Name, d.AmountPhp, d.FundCode, d.DateReceived, d.IsVoided,
+                    d.ReceiptNo, d.Purpose, d.Channel))
                 .ToListAsync(ct);
 
             return Results.Ok(donations);

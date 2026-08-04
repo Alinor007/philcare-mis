@@ -5,6 +5,7 @@ namespace philcare.Api.Features.Programs.Participants.CreateParticipant;
 public sealed record CreateParticipantRequest(
     string FullName,
     string ParticipantType,
+    string BeneficiaryType,
     Gender Gender,
     string? AgeGroup,
     string? Phone,
@@ -22,6 +23,7 @@ public sealed record CreateParticipantResponse(
     int Id,
     string FullName,
     string ParticipantType,
+    string BeneficiaryType,
     Gender Gender,
     string? VulnerabilityCategory,
     string? SafeguardingCategory,

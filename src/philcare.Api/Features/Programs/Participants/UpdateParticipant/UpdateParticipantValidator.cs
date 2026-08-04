@@ -8,6 +8,7 @@ public sealed class UpdateParticipantValidator : AbstractValidator<UpdatePartici
     {
         RuleFor(x => x.FullName).NotEmpty().MaximumLength(200);
         RuleFor(x => x.ParticipantType).NotEmpty().MaximumLength(50);
+        RuleFor(x => x.BeneficiaryType).NotEmpty().MaximumLength(50);
         RuleFor(x => x.Gender).IsInEnum();
         RuleFor(x => x.AgeGroup).MaximumLength(50);
         RuleFor(x => x.Phone).MaximumLength(50);

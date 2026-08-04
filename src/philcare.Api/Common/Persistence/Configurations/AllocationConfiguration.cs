@@ -25,10 +25,16 @@ public class AllocationConfiguration : IEntityTypeConfiguration<Allocation>
         builder.Property(a => a.EvidenceNotes).HasMaxLength(500);
 
         builder.HasIndex(a => a.DonationId);
+        builder.HasIndex(a => a.OtherIncomeId);
 
         builder.HasOne(a => a.Donation)
             .WithMany(d => d.Allocations)
             .HasForeignKey(a => a.DonationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(a => a.OtherIncome)
+            .WithMany(i => i.Allocations)
+            .HasForeignKey(a => a.OtherIncomeId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(a => a.SourceFund)

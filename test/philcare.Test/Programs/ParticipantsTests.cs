@@ -47,6 +47,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Female",
             VulnerabilityCategory = "WIDOW",
             ConsentOnFile = true
@@ -69,6 +70,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = "",
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             ConsentOnFile = false
         });
@@ -86,6 +88,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = uniqueType,
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = false
         });
@@ -118,6 +121,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             ConsentOnFile = false
         });
@@ -128,6 +132,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = participant.FullName,
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             VulnerabilityCategory = "PWD",
             ConsentOnFile = true,

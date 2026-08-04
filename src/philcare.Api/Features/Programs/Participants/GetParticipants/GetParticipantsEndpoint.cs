@@ -6,7 +6,7 @@ using philcare.Api.Features.Programs.Domain;
 namespace philcare.Api.Features.Programs.Participants.GetParticipants;
 
 public sealed record ParticipantListItemResponse(
-    int Id, string FullName, string ParticipantType, Gender Gender, string Status, bool IsActive);
+    int Id, string FullName, string ParticipantType, string BeneficiaryType, Gender Gender, string Status, bool IsActive);
 
 public sealed class GetParticipantsEndpoint : IEndpoint
 {
@@ -14,6 +14,7 @@ public sealed class GetParticipantsEndpoint : IEndpoint
     {
         app.MapGet("/api/participants", async (
             string? participantType,
+            string? beneficiaryType,
             string? status,
             bool? includeInactive,
             AppDbContext db,
@@ -31,6 +32,11 @@ public sealed class GetParticipantsEndpoint : IEndpoint
                 query = query.Where(p => p.ParticipantType == participantType);
             }
 
+            if (!string.IsNullOrWhiteSpace(beneficiaryType))
+            {
+                query = query.Where(p => p.BeneficiaryType == beneficiaryType);
+            }
+
             if (!string.IsNullOrWhiteSpace(status))
             {
                 query = query.Where(p => p.Status == status);
@@ -38,7 +44,7 @@ public sealed class GetParticipantsEndpoint : IEndpoint
 
             var participants = await query
                 .OrderBy(p => p.FullName)
-                .Select(p => new ParticipantListItemResponse(p.Id, p.FullName, p.ParticipantType, p.Gender, p.Status, p.IsActive))
+                .Select(p => new ParticipantListItemResponse(p.Id, p.FullName, p.ParticipantType, p.BeneficiaryType, p.Gender, p.Status, p.IsActive))
                 .ToListAsync(ct);
 
             return Results.Ok(participants);

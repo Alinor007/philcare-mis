@@ -1,6 +1,6 @@
 # PhilCare MIS — System Requirements
 
-**Status**: living document, generated from the actual codebase on branch `sprint-4/feature/other-income` (commit `cac15f0`), not from a prior spec. Re-verify against `git log` before trusting this after a gap in sessions — this system has been built across multiple parallel sessions and moves fast.
+**Status**: living document, generated from the actual codebase on branch `sprint-5/feature/governance`, not from a prior spec. Re-verify against `git log` before trusting this after a gap in sessions — this system has been built across multiple parallel sessions and moves fast.
 
 This document is the **specification**: what the system is, who uses it, what it enforces, and why. For **step-by-step build instructions** for a frontend against this API, see [`FRONTEND_PROMPTS.md`](FRONTEND_PROMPTS.md) — that file is the executable playbook; this one is the reference you'd hand to a new engineer or auditor.
 
@@ -10,7 +10,7 @@ This document is the **specification**: what the system is, who uses it, what it
 
 A management information system for **PhilCare**, a Philippines-based Islamic charity/NGO. It replaces spreadsheet-based tracking of donors, Zakat/Sadaqah/general funds, aid programs, and beneficiaries with a single system of record that enforces the organization's actual financial and safeguarding policies at the API level — not just documents them.
 
-**Explicitly out of scope, permanently**: all internal governance (Board of Trustees, org bodies, meeting minutes, quorum/voting rights, committee assignments). This was evaluated against the org's real historical data model and deliberately excluded — it is not deferred, it will not appear in a future sprint.
+**Governance is in scope as of Sprint 5.** Earlier revisions of this document stated governance was permanently excluded; that decision was reversed by the org. §3.5 describes what's built: org-body hierarchy, people, role assignments, meetings, minutes, and decisions. Two workbook entities — External Engagements and Media Outputs — remain deliberately deferred (see §6).
 
 **Language**: English only. The org's real source data included bilingual (English/Arabic) labels; Arabic-language text was stripped throughout. The underlying **Islamic finance domain logic is preserved in full** — Zakat fund segregation, the 12.5% Amil (zakat collector) share cap, the 8 Zakat asnaf categories, Sharia-restricted fund tracking. That logic is a business requirement, not a language choice.
 
@@ -22,10 +22,12 @@ Four roles, each a `UserRole` string on the account (`Admin`, `Finance`, `Progra
 
 | Role | Can do |
 |---|---|
-| **Admin** | Everything. Only role that can: void money-movement records (donations, other income, expenses, distributions), deactivate entities (programs, partners, volunteers, donors are edited not deleted), manage users, manage lookups, decide (approve/reject) Zakat eligibility cases. |
+| **Admin** | Everything. Only role that can: void money-movement records (donations, other income, expenses, distributions), deactivate entities (programs, partners, volunteers, donors are edited not deleted), manage users, manage lookups, decide (approve/reject) Zakat eligibility cases, and write anything in Governance (people, org bodies, roles, assignments, meetings, minutes, decisions). |
 | **Finance** | Read everything. Write: donors, donations, other income, expenses. |
 | **Program** | Read everything. Write: programs, projects, activities, participants, activity enrollment, distributions, partners, volunteers, sponsorships, Zakat eligibility case creation/submission (not the approval decision — that's Admin-only). |
 | **Viewer** | Read everything. No writes. |
+
+Governance writes are **Admin-only** — reusing the existing policy rather than adding a fifth role, since board rosters, meeting minutes, and voting records are sensitive enough to warrant the same gate as void/decide operations, and a dedicated governance role wasn't worth an auth migration for a first cut of the module.
 
 Authorization is enforced with three ASP.NET policies (`"Admin"`, `"Finance"` = Finance∨Admin, `"Program"` = Program∨Admin) applied per-endpoint — never inferred client-side only. Reads require any authenticated role; there is no field-level or row-level restriction yet (see §8, Known Gaps).
 
@@ -40,7 +42,7 @@ Authorization is enforced with three ASP.NET policies (`"Admin"`, `"Finance"` = 
 ## 3. Domain modules
 
 ### 3.1 Reference Data
-A single generic `LookupItem` table (`category`, `code`, `label`, `sortOrder`, `isActive`) backs every coded dropdown in the system, rather than hardcoding enums for business vocabulary that changes over time (categories, statuses, types). **19 categories** are seeded today: `fund_type`, `expense_category`, `zakat_asnaf`, `payment_method`, `donor_type`, `activity_type`, `region`, `beneficiary_status`, `distribution_type`, `participant_type`, `vulnerability_category`, `safeguarding_category`, `program_category`, `implementation_status`, `age_group`, `partner_type`, `volunteer_status`, `sponsorship_type`, `income_type`.
+A single generic `LookupItem` table (`category`, `code`, `label`, `sortOrder`, `isActive`) backs every coded dropdown in the system, rather than hardcoding enums for business vocabulary that changes over time (categories, statuses, types). **30 categories** are seeded today, spanning Finance/Programs (`fund_type`, `expense_category`, `zakat_asnaf`, `payment_method`, `donor_type`, `activity_type`, `region`, `beneficiary_status`, `distribution_type`, `participant_type`, `vulnerability_category`, `safeguarding_category`, `program_category`, `implementation_status`, `age_group`, `partner_type`, `volunteer_status`, `sponsorship_type`, `income_type`, `engagement_type`, `beneficiary_type`) and Governance (`person_category`, `person_status`, `org_body_type`, `governance_role_category`, `meeting_type`, `meeting_mode`, `attendance_status`, `meeting_role`, `decision_status`).
 
 Seeding is **additive**: re-running the seeder only inserts `(category, code)` pairs that don't already exist, so adding a new category in a later sprint doesn't require a destructive reseed of an environment that already has data.
 
@@ -81,6 +83,19 @@ The program-delivery hierarchy: **Program → Project → Activity**, each with 
 - **Sponsorship** — recurring pledges linking a Finance Donor to a Programs Participant (`monthlyAmountPhp`, `caseWorker`, lifecycle `Active → Paused/Ended`, `Ended` is terminal). **Deliberately decoupled from actual money**: the pledge amount is a commitment record; real payments are ordinary Finance Donations. This keeps `Expense`/`Donation` as the only sources of truth for cash, at the cost of no automatic "did this month's pledge actually arrive" reconciliation (see §8).
 - **Zakat Eligibility** — the formal case-assessment workflow that *gates* who may receive Zakat. Lifecycle: `Draft → Submitted → Approved/Rejected` (Admin decides). A **Distribution against the Zakat program bucket is blocked unless the participant has an Approved, unexpired eligibility case** — the API auto-fills the distribution's `zakatAsnaf` from the approved case, or rejects it if the caller supplies a mismatching one. Only one live (Approved, unexpired) case per participant is allowed, enforced at the database level with a unique index (not just an application-level check — this was tightened after a code-review pass specifically because it gates charitable-fund disbursement).
 
+### 3.5 Governance
+Sourced entirely from the org's real "Enhanced System v7.2" workbook — 11 governance sheets there, of which this sprint builds 9 (the two omitted, **External Engagements** and **Media Outputs**, had essentially no real data — 1 populated row apiece behind hundreds of empty stub IDs — and are deferred rather than built against placeholder shape).
+
+- **Person** — the identity hub every other governance record hangs off. `personCategory` (Board/Executive/Member), `personStatus`, optional loose link to a `Volunteer` (informational, handler-validated, no DB FK — same pattern as Programs↔Finance links, see §4).
+- **OrgBody** — the governance-body hierarchy (General Assembly → Board of Trustees → Executive Management → committees/units), self-referencing via `parentBodyId`. `quorumRule`/`decisionThreshold`/`meetingFrequency`/`policyBasis` are kept as **free-text policy strings verbatim from the org's governance manual** (e.g. `"50% + 1"`, `"75% for strategic decisions"`) rather than parsed into numbers — see the quorum note below. Updating a body's parent is rejected if it would create a cycle (`400 Governance.CircularBodyHierarchy`, walks the ancestor chain server-side); deactivating a body with active child bodies or current assignments is rejected (`409 Governance.BodyInUse`).
+- **GovernanceRole** — role master (Chairperson, Vice Chair, Secretary, Treasurer, CEO, Member...). Its voting/quorum/delegable fields are also free-text conditional rules ("Depends on body", "Yes if eligible"), not booleans — actual per-instance enforcement lives on `Assignment`.
+- **Assignment** — the entity "board trustees" and "executive team" are *derived from*, not stored as. There is no separate `BoardTrustee`/`ExecutiveTeamMember` table; a person's board or executive membership is just an `Assignment` (person × org body × role, with start/end dates and a `Current`/`Former` status), and `GET /api/governance/bodies/{id}/members` resolves the live roster by filtering to `Current` assignments (or `asOf`/`includeFormer` for historical views). **At most one primary Current assignment per person** is enforced at the database level with a unique index (`409 Governance.DuplicatePrimaryAssignment` on violation, including the race case) — the same pattern used for `ZakatEligibility.IsLiveApproval`.
+- **Meeting** — belongs to an OrgBody; `quorumRequired`/`decisionThreshold` are **snapshot-copied from the body at creation time**, not live-read, so a later policy change doesn't silently rewrite the historical record of what applied to a past meeting. `publicationDeadline` defaults to meeting date + 10 days (the org's own convention) when not supplied.
+- **MeetingParticipant** — attendance/voting record per person per meeting, optionally tied to the specific `Assignment` that granted the vote (validated to actually belong to that person: `400 Governance.AssignmentPersonMismatch`).
+- **Quorum reporting** (`GET /api/governance/meetings/{id}/quorum`) — reports eligible/present/quorum-eligible-present counts and a percentage, **alongside** the meeting's snapshotted quorum-rule text. It deliberately does **not** attempt to evaluate free-text rules like `"50% + 1 ordinary; 2/3 strategic decisions"` — that interpretation is a human judgment call the system surfaces numbers for, not something it fakes.
+- **MeetingMinutes / MeetingDecision** — minutes are 1:1 with a Held meeting (`400 Governance.MeetingNotHeld` if the meeting hasn't happened yet; `409 Governance.MinutesAlreadyExist` on a second attempt); decisions are a **separate, properly-keyed child entity**, not inline text on the minutes row — the source workbook's "Minutes ID" was reused across multiple decision rows for one meeting, which this schema fixes. Both minutes and their decisions are locked from further edits once `PublicationStatus = Published` (`409 Governance.MinutesPublished`).
+- **Reports** (1): governance summary — per body, current member count, meetings held (date-range filterable), minutes published vs. pending, open decisions.
+
 ---
 
 ## 4. Cross-cutting technical requirements
@@ -111,7 +126,8 @@ The program-delivery hierarchy: **Program → Project → Activity**, each with 
 | 2 | Finance (Fund/FundingBucket model, donations, expenses, KYD/AML, 7 reports) | Merged |
 | 3 | Programs (Program/Project/Activity, Participants, roster, Distributions, 2 reports) | Merged |
 | 4 | Partners, Volunteers, Sponsorship, Zakat Eligibility, Other Income | Built, PR open, includes a review-feedback follow-up (DB-enforced single-live-approval, server-derived partner name, lookup-validated safeguarding risk) |
-| 5 (proposed, not yet planned) | Feedback/Complaints, Documents/Evidence registry, M&E Reports, Follow-ups, **sponsorship-fulfillment reconciliation report**, **row-level scoping for Sponsorship**, drop the now-safe-to-remove legacy `Activity.ImplementingPartner` string column | Not started |
+| 5 | Governance (Person, OrgBody, GovernanceRole, Assignment, Meeting, MeetingParticipant, MeetingMinutes, MeetingDecision, governance-summary report), plus Donor Engagements and `Participant.BeneficiaryType` | Built, branch `sprint-5/feature/governance` |
+| 6 (proposed, not yet planned) | External Engagements + Media Outputs (the 2 remaining workbook governance sheets — deferred from Sprint 5 for having ~1 real data row each), Feedback/Complaints, Documents/Evidence registry, M&E Reports, Follow-ups, **sponsorship-fulfillment reconciliation report**, **row-level scoping for Sponsorship**, drop the now-safe-to-remove legacy `Activity.ImplementingPartner` string column | Not started |
 | Unslotted | Staff directory, Membership, Finance hardening (bank reconciliation, KYD-review/donor-engagement workflow endpoints, year-end close checklist, controls audit, opening-balance import beyond the one seeded snapshot) | Not started |
 
 ---
@@ -124,6 +140,9 @@ The program-delivery hierarchy: **Program → Project → Activity**, each with 
 4. **Activities have no direct "funding source" field** — funding is tracked at the Project level and per-Distribution, not on the Activity row itself.
 5. **`SdgAlignment` is free text**, not a multi-select tag list — usable for display, not filterable/reportable per-SDG.
 6. **List-endpoint filtering is limited** — e.g. Activities/Projects can't be filtered by category or SDG tag yet, even though the data is stored.
+7. **Governance quorum/decision-threshold rules are not machine-evaluated** — the API reports attendance counts and the org's own free-text policy string side by side; it does not parse "50% + 1 ordinary; 2/3 strategic decisions" and declare a meeting quorate. That judgment stays human.
+8. **External Engagements and Media Outputs are not built** — 2 of the 11 workbook governance entities, deferred for having almost no real data behind them (see §6).
+9. **Governance writes are Admin-only** with no dedicated role — fine for a first cut, but means a board secretary can't manage minutes without full Admin access.
 
 ---
 
@@ -132,6 +151,6 @@ The program-delivery hierarchy: **Program → Project → Activity**, each with 
 The org provided real production Excel workbooks (outside this repo) as the actual source of truth, ranked when they conflict:
 1. **"Proposed Final Database"** workbook — clean target schema, wins on entity shape.
 2. **"PhilCare Financial Donor Database" (2026)** workbook — authoritative for the Finance module specifically (fund/bucket model, admin-rate caps, KYD/AML fields).
-3. **"Enhanced System v7.2"** workbook — messier historical data; useful for extra field ideas, not overall structure; also the source of the governance entities that were evaluated and excluded.
+3. **"Enhanced System v7.2"** workbook — messier historical data; useful for extra field ideas, not overall structure; also the **sole source of the Governance module** (§3.5) — the "Proposed Final Database" workbook contains no governance sheets at all.
 
-See `FRONTEND_PROMPTS.md` for the complete field-by-field API contract (all 82 endpoints, every request/response shape, every enum, every business rule a frontend must surface) — that file is kept in lockstep with the actual API and is the more precise reference for anyone implementing against it.
+See `FRONTEND_PROMPTS.md` for the complete field-by-field API contract (all 129 endpoints, every request/response shape, every enum, every business rule a frontend must surface) — that file is kept in lockstep with the actual API and is the more precise reference for anyone implementing against it.

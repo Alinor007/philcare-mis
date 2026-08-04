@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Features.Auth.Domain;
 using philcare.Api.Features.Finance.Domain;
+using philcare.Api.Features.Governance.Domain;
 using philcare.Api.Features.Partners.Domain;
 using philcare.Api.Features.Programs.Domain;
 using philcare.Api.Features.ReferenceData.Domain;
@@ -41,6 +42,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ActivityVolunteer> ActivityVolunteers => Set<ActivityVolunteer>();
     public DbSet<Sponsorship> Sponsorships => Set<Sponsorship>();
     public DbSet<ZakatEligibility> ZakatEligibilities => Set<ZakatEligibility>();
+
+    // Governance — Sprint 5
+    public DbSet<Person> GovernancePeople => Set<Person>();
+    public DbSet<OrgBody> OrgBodies => Set<OrgBody>();
+    public DbSet<GovernanceRole> GovernanceRoles => Set<GovernanceRole>();
+    public DbSet<Assignment> Assignments => Set<Assignment>();
+    public DbSet<Meeting> Meetings => Set<Meeting>();
+    public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
+    public DbSet<MeetingMinutes> MeetingMinutes => Set<MeetingMinutes>();
+    public DbSet<MeetingDecision> MeetingDecisions => Set<MeetingDecision>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

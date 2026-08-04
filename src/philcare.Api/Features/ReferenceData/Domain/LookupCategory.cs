@@ -15,4 +15,7 @@ public static class LookupCategory
     public const string VolunteerStatus = "volunteer_status";
     public const string SponsorshipType = "sponsorship_type";
     public const string SafeguardingCategory = "safeguarding_category";
+    public const string IncomeType = "income_type";
+    public const string EngagementType = "engagement_type";
+    public const string BeneficiaryType = "beneficiary_type";
 }

@@ -73,6 +73,7 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = "ATTENDEE",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = false
         });

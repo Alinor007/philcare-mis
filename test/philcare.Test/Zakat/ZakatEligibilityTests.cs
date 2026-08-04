@@ -44,6 +44,7 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
         {
             FullName = $"Participant-{Guid.NewGuid():N}",
             ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });

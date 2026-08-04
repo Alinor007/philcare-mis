@@ -35,8 +35,19 @@ public sealed class GetRestrictedFundLedgerEndpoint : IEndpoint
                     .FirstOrDefaultAsync(ct);
 
                 var allocationsIn = await db.Allocations
-                    .Where(a => a.SourceFundCode == fund.Code && a.ReportingYear == reportingYear)
-                    .Select(a => new { Date = a.AllocationDate, Ref = a.DonationId != null ? $"DON-{a.DonationId}" : "Opening", Amount = a.AllocatedAmountPhp, a.EvidenceNotes })
+                    .Where(a => a.SourceFundCode == fund.Code && a.ReportingYear == reportingYear
+                        // Exclude allocations whose source was later voided — the bucket balance
+                        // already reverses these on void, so the ledger must too or it overstates
+                        // income relative to the running balance.
+                        && (a.Donation == null || !a.Donation.IsVoided)
+                        && (a.OtherIncome == null || !a.OtherIncome.IsVoided))
+                    .Select(a => new
+                    {
+                        Date = a.AllocationDate,
+                        Ref = a.DonationId != null ? $"DON-{a.DonationId}" : a.OtherIncomeId != null ? $"INC-{a.OtherIncomeId}" : "Opening",
+                        Amount = a.AllocatedAmountPhp,
+                        a.EvidenceNotes
+                    })
                     .ToListAsync(ct);
 
                 var expensesOut = await db.Expenses

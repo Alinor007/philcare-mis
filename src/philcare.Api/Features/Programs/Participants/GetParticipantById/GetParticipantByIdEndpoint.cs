@@ -9,6 +9,7 @@ public sealed record ParticipantDetailResponse(
     int Id,
     string FullName,
     string ParticipantType,
+    string BeneficiaryType,
     Gender Gender,
     string? AgeGroup,
     string? Phone,
@@ -33,7 +34,7 @@ public sealed class GetParticipantByIdEndpoint : IEndpoint
             var participant = await db.Participants
                 .Where(p => p.Id == id)
                 .Select(p => new ParticipantDetailResponse(
-                    p.Id, p.FullName, p.ParticipantType, p.Gender, p.AgeGroup, p.Phone, p.Barangay, p.City, p.Province,
+                    p.Id, p.FullName, p.ParticipantType, p.BeneficiaryType, p.Gender, p.AgeGroup, p.Phone, p.Barangay, p.City, p.Province,
                     p.Region, p.Country, p.VulnerabilityCategory, p.SafeguardingCategory, p.ConsentOnFile, p.Status,
                     p.Remarks, p.IsActive))
                 .FirstOrDefaultAsync(ct);

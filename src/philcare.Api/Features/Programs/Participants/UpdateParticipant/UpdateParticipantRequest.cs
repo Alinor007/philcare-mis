@@ -5,6 +5,7 @@ namespace philcare.Api.Features.Programs.Participants.UpdateParticipant;
 public sealed record UpdateParticipantRequest(
     string FullName,
     string ParticipantType,
+    string BeneficiaryType,
     Gender Gender,
     string? AgeGroup,
     string? Phone,
@@ -21,4 +22,4 @@ public sealed record UpdateParticipantRequest(
     bool IsActive);
 
 public sealed record UpdateParticipantResponse(
-    int Id, string FullName, string ParticipantType, Gender Gender, string Status, bool IsActive);
+    int Id, string FullName, string ParticipantType, string BeneficiaryType, Gender Gender, string Status, bool IsActive);

@@ -13,6 +13,9 @@ public class Participant : Entity
 {
     public string FullName { get; set; } = string.Empty;
     public string ParticipantType { get; set; } = string.Empty; // lookup: participant_type
+    // Individual vs institution/organization — an institution (school, madrasah) or community
+    // organization can itself be registered as an aid recipient, not just a natural person.
+    public string BeneficiaryType { get; set; } = "INDIVIDUAL"; // lookup: beneficiary_type
     public Gender Gender { get; set; } = Gender.Unspecified;
     public string? AgeGroup { get; set; } // lookup: age_group
     public string? Phone { get; set; }

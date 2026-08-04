@@ -12,6 +12,7 @@ public sealed class CreateParticipantHandler(AppDbContext db)
         {
             FullName = request.FullName,
             ParticipantType = request.ParticipantType,
+            BeneficiaryType = request.BeneficiaryType,
             Gender = request.Gender,
             AgeGroup = request.AgeGroup,
             Phone = request.Phone,
@@ -32,7 +33,7 @@ public sealed class CreateParticipantHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CreateParticipantResponse(
-            participant.Id, participant.FullName, participant.ParticipantType, participant.Gender,
+            participant.Id, participant.FullName, participant.ParticipantType, participant.BeneficiaryType, participant.Gender,
             participant.VulnerabilityCategory, participant.SafeguardingCategory, participant.ConsentOnFile,
             participant.Status, participant.IsActive));
     }

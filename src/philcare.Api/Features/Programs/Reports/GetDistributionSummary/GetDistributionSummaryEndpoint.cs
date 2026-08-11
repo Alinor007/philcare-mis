@@ -17,13 +17,13 @@ public sealed class GetDistributionSummaryEndpoint : IEndpoint
             // GroupBy with multiple aggregates in a single projection (see Sprint 2 lesson).
             var distributions = await db.Distributions
                 .Where(d => !d.IsVoided)
-                .Select(d => new { d.DistributionType, d.ParticipantId, d.Quantity, d.TotalValuePhp })
+                .Select(d => new { d.DistributionType, d.BeneficiaryId, d.Quantity, d.TotalValuePhp })
                 .ToListAsync(ct);
 
             var rows = distributions
                 .GroupBy(d => d.DistributionType)
                 .Select(g => new DistributionSummaryRow(
-                    g.Key, g.Count(), g.Select(d => d.ParticipantId).Distinct().Count(), g.Sum(d => d.Quantity), g.Sum(d => d.TotalValuePhp)))
+                    g.Key, g.Count(), g.Select(d => d.BeneficiaryId).Distinct().Count(), g.Sum(d => d.Quantity), g.Sum(d => d.TotalValuePhp)))
                 .OrderBy(r => r.DistributionType)
                 .ToList();
 

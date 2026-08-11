@@ -10,7 +10,6 @@ public sealed record UpdateProjectRequest(
     DateTime? EndDate,
     string? Location,
     string? ProjectManager,
-    string ImplementationStatus,
     string? ApprovalLevel,
     string? Notes,
     bool IsActive);

@@ -23,14 +23,33 @@ using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Api.Features.Finance.Expenses.VoidExpense;
 using philcare.Api.Features.Finance.OtherIncomes.CreateOtherIncome;
 using philcare.Api.Features.Finance.OtherIncomes.VoidOtherIncome;
+using philcare.Api.Features.Governance.Assignments.CreateAssignment;
+using philcare.Api.Features.Governance.Assignments.UpdateAssignment;
+using philcare.Api.Features.Governance.Decisions.CreateDecision;
+using philcare.Api.Features.Governance.Decisions.UpdateDecision;
+using philcare.Api.Features.Governance.Meetings.CreateMeeting;
+using philcare.Api.Features.Governance.Meetings.UpdateMeeting;
+using philcare.Api.Features.Governance.MeetingParticipants.AddMeetingParticipant;
+using philcare.Api.Features.Governance.Minutes.CreateMinutes;
+using philcare.Api.Features.Governance.Minutes.UpdateMinutes;
+using philcare.Api.Features.Governance.OrgBodies.CreateOrgBody;
+using philcare.Api.Features.Governance.OrgBodies.UpdateOrgBody;
+using philcare.Api.Features.Governance.People.CreatePerson;
+using philcare.Api.Features.Governance.People.UpdatePerson;
+using philcare.Api.Features.Governance.Roles.CreateGovernanceRole;
+using philcare.Api.Features.Governance.Roles.UpdateGovernanceRole;
 using philcare.Api.Features.Programs.ActivityParticipants.AddActivityParticipant;
+using philcare.Api.Features.Programs.ActivityParticipants.UpdateActivityParticipant;
+using philcare.Api.Features.Programs.Activities.ChangeActivityStatus;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.Activities.UpdateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
 using philcare.Api.Features.Programs.AidPrograms.UpdateProgram;
 using philcare.Api.Features.Programs.Distributions.CreateDistribution;
+using philcare.Api.Features.Programs.Distributions.VoidDistribution;
 using philcare.Api.Features.Programs.Participants.CreateParticipant;
 using philcare.Api.Features.Programs.Participants.UpdateParticipant;
+using philcare.Api.Features.Programs.Projects.ChangeProjectStatus;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Api.Features.Programs.Projects.UpdateProject;
 using philcare.Api.Features.Partners.CreatePartner;
@@ -41,9 +60,11 @@ using philcare.Api.Features.Sponsorships.ChangeSponsorshipStatus;
 using philcare.Api.Features.Sponsorships.CreateSponsorship;
 using philcare.Api.Features.Sponsorships.UpdateSponsorship;
 using philcare.Api.Features.Users.UpdateUser;
-using philcare.Api.Features.Volunteers.ActivityVolunteers.AddActivityVolunteer;
-using philcare.Api.Features.Volunteers.CreateVolunteer;
-using philcare.Api.Features.Volunteers.UpdateVolunteer;
+using philcare.Api.Features.HumanResources.Staff.CreateStaffMember;
+using philcare.Api.Features.HumanResources.Staff.UpdateStaffMember;
+using philcare.Api.Features.HumanResources.Volunteers.ActivityVolunteers.AddActivityVolunteer;
+using philcare.Api.Features.HumanResources.Volunteers.CreateVolunteer;
+using philcare.Api.Features.HumanResources.Volunteers.UpdateVolunteer;
 using philcare.Api.Features.Zakat.CreateZakatEligibility;
 using philcare.Api.Features.Zakat.DecideZakatEligibility;
 using philcare.Api.Features.Zakat.SubmitZakatEligibility;
@@ -107,10 +128,24 @@ public static class DependencyInjection
                 };
             });
 
+        // Five policies, not three: the Zakat & Donations Collection Department needs the money-in
+        // half of Finance plus the casework half of Program, and neither original policy could be
+        // widened to fit without also handing over expenses or the whole Programs module.
         services.AddAuthorizationBuilder()
             .AddPolicy("Admin", policy => policy.RequireRole("Admin"))
+            // Money OUT and the rest of the finance ledger. Deliberately excludes ZakatDonations.
             .AddPolicy("Finance", policy => policy.RequireRole("Finance", "Admin"))
-            .AddPolicy("Program", policy => policy.RequireRole("Program", "Admin"));
+            // Money IN — donors, donor engagements, donations, other income.
+            .AddPolicy("Income", policy => policy.RequireRole("Finance", "Admin", "ZakatDonations"))
+            // Program delivery writes — programs, projects, activities, distributions, rosters,
+            // and creating/editing beneficiaries.
+            .AddPolicy("Program", policy => policy.RequireRole("Program", "Admin"))
+            // Beneficiary casework: zakat eligibility cases plus READ access to the participant
+            // registry those cases are raised against — assessing a case means looking the person
+            // up, so the two cannot be separated. Creating/editing beneficiaries stays "Program",
+            // and the zakat approve/reject decision stays "Admin", so the department that assesses
+            // a case is never the one that approves it.
+            .AddPolicy("Casework", policy => policy.RequireRole("Program", "Admin", "ZakatDonations"));
 
         services.Configure<LockoutOptions>(configuration.GetSection(LockoutOptions.SectionName));
 
@@ -177,6 +212,33 @@ public static class DependencyInjection
         // Donor engagement workflow — Sprint 5
         services.AddScoped<CreateDonorEngagementHandler>();
         services.AddScoped<UpdateDonorEngagementHandler>();
+
+        // Governance handlers — Sprint 5
+        services.AddScoped<CreatePersonHandler>();
+        services.AddScoped<UpdatePersonHandler>();
+        services.AddScoped<CreateOrgBodyHandler>();
+        services.AddScoped<UpdateOrgBodyHandler>();
+        services.AddScoped<CreateGovernanceRoleHandler>();
+        services.AddScoped<UpdateGovernanceRoleHandler>();
+        services.AddScoped<CreateAssignmentHandler>();
+        services.AddScoped<UpdateAssignmentHandler>();
+        services.AddScoped<CreateMeetingHandler>();
+        services.AddScoped<UpdateMeetingHandler>();
+        services.AddScoped<AddMeetingParticipantHandler>();
+        services.AddScoped<CreateMinutesHandler>();
+        services.AddScoped<UpdateMinutesHandler>();
+        services.AddScoped<CreateDecisionHandler>();
+        services.AddScoped<UpdateDecisionHandler>();
+
+        // Program & Beneficiary workflow refactor — Sprint 6
+        services.AddScoped<ChangeProjectStatusHandler>();
+        services.AddScoped<ChangeActivityStatusHandler>();
+        services.AddScoped<UpdateActivityParticipantHandler>();
+        services.AddScoped<VoidDistributionHandler>();
+
+        // Human Resources — Sprint 7
+        services.AddScoped<CreateStaffMemberHandler>();
+        services.AddScoped<UpdateStaffMemberHandler>();
 
         return services;
     }

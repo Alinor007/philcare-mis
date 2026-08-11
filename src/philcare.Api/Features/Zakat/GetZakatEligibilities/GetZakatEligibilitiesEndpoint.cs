@@ -42,6 +42,6 @@ public sealed class GetZakatEligibilitiesEndpoint : IEndpoint
         })
         .WithName("GetZakatEligibilities")
         .WithTags("ZakatEligibility")
-        .RequireAuthorization();
+        .RequireAuthorization("Casework");
     }
 }

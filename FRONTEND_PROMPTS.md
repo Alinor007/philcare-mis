@@ -29,10 +29,14 @@ AUTH MECHANICS:
 - Send Authorization: Bearer <accessToken> on every request except login/refresh.
 - GET /api/auth/me → {id, email, role} (role is a string). POST /api/auth/change-password {currentPassword, newPassword} → 204. POST /api/auth/logout {refreshToken} → 204. POST /api/auth/revoke-all → 204 (kills all sessions).
 
-ROLES & UI GATING — role comes from /api/auth/me. Four roles: Admin, Finance, Program, Viewer.
-- Reads: every authenticated role can view every screen and report.
-- Finance writes (create/edit donors, donations, other income, expenses): visible only to Finance and Admin.
-- Program writes (programs, projects, activities, participants, enrollment, distributions, partners, volunteers, sponsorships, zakat cases): visible only to Program and Admin.
+ROLES & UI GATING — role comes from /api/auth/me. Five roles: Admin, Finance, Program, ZakatDonations, Viewer. Mirror the server's policy groups in one module (`lib/roles.ts`) and reference those constants from `RoleGate`/`RequireRole` rather than hard-coding role literals per call site — a role added later must not silently drop out of a gate.
+- ZakatDonations = the Zakat & Donations Collection Department. Writes: donors, donor engagements, donations, other income, Zakat case create/submit. Reads the participant registry (needed to raise a case). Cannot record expenses, create/edit beneficiaries, record distributions, void anything, or approve Zakat cases. Label it "Zakat & Donations" in the UI — the raw enum value is unreadable.
+- Reads: every authenticated role can view every screen and report, **except** the Participants/beneficiary registry and Zakat Eligibility case data — those are PII-bearing and gated to Program/Admin/ZakatDonations (both the list/detail GETs and the beneficiary-master-list report, which stays Program/Admin only). Don't render those nav items for Finance/Viewer at all; a 403 on page load reads as a bug, not a permission boundary.
+- Money-IN writes (create/edit donors, donor engagements, donations, other income): visible to Finance, Admin and ZakatDonations.
+- Money-OUT writes (expenses): visible only to Finance and Admin — deliberately NOT ZakatDonations, so a collections department cannot disburse.
+- Careful with *inverted* gates (content shown to everyone who is not an Admin, e.g. the "awaiting admin decision" notice on a submitted Zakat case). Drive those from a shared non-admin role list too, or a new role silently stops seeing them.
+- ROUTE SCOPING (relevance, not security): because most reads are open to any authenticated role, a narrow role would otherwise see the whole app. Keep a per-role route allowlist in `lib/roles.ts` and apply it in two places — filter the sidebar with it, and wrap the content area (INSIDE the shell, so the sidebar survives) in a guard that shows the 403 screen for out-of-scope URLs. ZakatDonations is scoped to: `/`, `/donors`, `/donations`, `/other-income`, `/funds`, `/reports/finance`, `/participants`, `/zakat-eligibilities`, `/sponsorships`. Match prefixes segment-aware so `/donors` covers `/donors/12` but `/reports` does not admit `/reports/programs`. Drop a nav group entirely when all its items are filtered out — never render a bare heading. Also scope the dashboard: this role sees the fund-balance and income cards only, and the program/distribution/sponsorship queries should be `enabled: false` for it rather than fetched and discarded.
+- Program writes (programs, projects, activities, participants, enrollment, distributions, partners, volunteers, sponsorships, zakat cases): visible only to Program and Admin. This includes recording Distributions, which also posts a Finance Expense in the same call — an intentional grant, not a bug (see Prompt 9).
 - Admin-only: void buttons (donations, other income, expenses, distributions), deactivate buttons (programs, partners, volunteers, donors are edited not deleted), user management, lookup management, zakat approve/reject decision.
 - Hide (don't just disable) buttons the current role can't use. Also handle 403 responses gracefully with a toast ("You don't have permission for this").
 
@@ -41,9 +45,9 @@ ERROR HANDLING — the API returns three shapes; handle all:
 2. Validation errors (400): {title: "One or more validation errors occurred.", status: 400, errors: {FieldName: ["message", ...]}} — map to the matching form fields.
 3. Unhandled (500): {title: "An unexpected error occurred", detail: "..."} — generic error toast.
 
-ENUMS — serialized as strings everywhere: UserRole(Admin|Finance|Program|Viewer), Gender(Male|Female|Unspecified), DonorType(Individual|Organization|Partner), KydStatus(Pending|Review|Cleared|Rejected), RiskRating(Low|Medium|High), BucketType(Program|Admin|Operations|Capital), AllocationType(Program|Admin|Amil|Opening|Income), SponsorshipStatus(Active|Paused|Ended), ZakatEligibilityStatus(Draft|Submitted|Approved|Rejected).
+ENUMS — serialized as strings everywhere: UserRole(Admin|Finance|Program|ZakatDonations|Viewer), Gender(Male|Female|Unspecified), DonorType(Individual|Organization|Partner), KydStatus(Pending|Review|Cleared|Rejected), RiskRating(Low|Medium|High), BucketType(Program|Admin|Operations|Capital), AllocationType(Program|Admin|Amil|Opening|Income), SponsorshipStatus(Active|Paused|Ended), ZakatEligibilityStatus(Draft|Submitted|Approved|Rejected).
 
-LOOKUPS — all category-coded dropdowns are data-driven: GET /api/lookups/{category} → [{id, category, code, label, sortOrder, isActive}]. Forms submit the CODE, tables display the LABEL. Cache lookups with TanStack Query (staleTime ~5 min). Categories in use: fund_type, expense_category, zakat_asnaf, payment_method, donor_type, activity_type, region, beneficiary_status, distribution_type, participant_type, vulnerability_category, safeguarding_category, program_category, implementation_status, age_group, partner_type, volunteer_status, sponsorship_type, income_type.
+LOOKUPS — all category-coded dropdowns are data-driven: GET /api/lookups/{category} → [{id, category, code, label, sortOrder, isActive}]. Forms submit the CODE, tables display the LABEL. Cache lookups with TanStack Query (staleTime ~5 min). Categories in use: fund_type, expense_category, zakat_asnaf, payment_method, donor_type, activity_type, region, beneficiary_status, distribution_type, participant_type, vulnerability_category, safeguarding_category, program_category, program_status, implementation_status, age_group, partner_type, volunteer_status, sponsorship_type, income_type, beneficiary_type, attendance_status (originally Governance-only, now also used on the activity participant roster — see Prompt 9).
 
 MONEY — everything settles in PHP. Format as ₱ with thousands separators, 2 decimals (Intl.NumberFormat 'en-PH', currency PHP). Multi-currency inputs (donations, other income, expenses) take amountOriginal + currency + fxRateToPhp and the API computes amountPhp = round(amountOriginal × fxRateToPhp, 2) — preview this live in forms.
 
@@ -185,11 +189,11 @@ EXPENSES — the single source of money-out. Endpoints:
 - GET /api/expenses?fundingBucketCode=&expenseCategory=&from=&to=&includeVoided= → [{id, fundingBucketCode, amountPhp, expenseCategory, expenseDate, isVoided}]
 - GET /api/expenses/{id} → {id, fundCode, fundingBucketCode, amountOriginal, currency, fxRateToPhp, amountPhp, expenseCategory, paymentMethod, expenseDate, description, receiptNo?, approvalStatus, approvedBy?, zakatAsnaf?, beneficiaryCount?, isVoided}
 - POST /api/expenses (Finance/Admin) {expenseDate, payeeVendor, expenseCategory, description, programOrProject?, paymentMethod, amountOriginal, currency, fxRateToPhp, receiptNo?, approvedBy?, supportingDocStatus?, linkedDonationId?, expenseFunction?, fundingBucketCode, zakatAsnaf?, beneficiaryCount?, beneficiaryType?, notes?} → 201; the response includes remainingBucketBalance — show it in the success toast ("Recorded. ₱X remaining in <bucket>").
-- DELETE /api/expenses/{id} (Admin) → 204 void (restores the bucket balance).
+- DELETE /api/expenses/{id} (Admin) → 204 void (restores the bucket balance). **409 "Expenses.VoidViaDistribution"** if this expense was generated by recording a Programs Distribution (`expenseCategory: "DISTRIBUTION"` is the tell) — the void must happen from the distribution's own detail page instead. Catch this 409 specifically and show a message with a link to /distributions?... rather than a generic error.
 
-Rules to surface: expenseCategory ← lookup "expense_category"; paymentMethod ← lookup "payment_method". Spending against the ZAK-PROG bucket REQUIRES zakatAsnaf (lookup "zakat_asnaf") and beneficiaryCount — when the selected bucket is ZAK-PROG, reveal and require those two fields (helper: "zakat distributions must be attributed to one of the 8 asnaf"). Overspending a bucket returns 400 with detail — show it. Bucket select should display each bucket's live remaining balance (from GET /api/funding-buckets) so users see what's spendable before submitting.
+Rules to surface: expenseCategory ← lookup "expense_category" (now also includes the system-generated "DISTRIBUTION" category — treat rows in that category as read-mostly: still viewable/filterable here, just not directly voidable, per above); paymentMethod ← lookup "payment_method". Spending against the ZAK-PROG bucket REQUIRES zakatAsnaf (lookup "zakat_asnaf") and beneficiaryCount — when the selected bucket is ZAK-PROG, reveal and require those two fields (helper: "zakat distributions must be attributed to one of the 8 asnaf"). Overspending a bucket returns 400 with detail — show it. Bucket select should display each bucket's live remaining balance (from GET /api/funding-buckets) so users see what's spendable before submitting.
 
-Screens: list with filters, columns Date/Category label/Bucket/Amount/Voided; create form as above with live ₱ preview and conditional zakat fields; detail page (all fields, approval status, zakat attribution if present) with Admin void button.
+Screens: list with filters, columns Date/Category label/Bucket/Amount/Voided; create form as above with live ₱ preview and conditional zakat fields; detail page (all fields, approval status, zakat attribution if present) with Admin void button — hide/disable the void button and show a "voidable from its distribution" note when expenseCategory is "DISTRIBUTION".
 ```
 
 ---
@@ -229,27 +233,30 @@ PROGRAMS:
 - GET /api/programs?includeInactive= → [{id, name, category, status, isActive}]
 - GET /api/programs/{id} → + {ownerDepartment?, notes?, projectCount}
 - POST /api/programs (Program write) {name, category, ownerDepartment?, notes?} → 201 (category ← lookup "program_category")
-- PUT /api/programs/{id} (Program write) {name, category, ownerDepartment?, status, notes?, isActive}
+- PUT /api/programs/{id} (Program write) {name, category, ownerDepartment?, status, notes?, isActive}. `status` now has a lookup, "program_status" (ACTIVE/INACTIVE) — use it to drive the dropdown, but note the API does **not** validate the value server-side (unlike Project/Activity `implementationStatus`, which is a real enforced transition — see Prompt 8 below), so treat it as advisory, not a hard contract.
 - DELETE /api/programs/{id} (Admin) → 204 soft-deactivate.
 
 PROJECTS:
 - GET /api/projects?programId=&implementationStatus=&includeInactive= → [{id, programId, programName, name, totalBudget, implementationStatus, isActive}]
 - GET /api/projects/{id} → + {donorId?, fundCode?, targetBeneficiaries?, startDate?, endDate?, location?, projectManager?, approvalLevel?, notes?, activityCount}
 - POST /api/projects (Program write) {programId, name, donorId?, fundCode?, totalBudget, targetBeneficiaries?, startDate?, endDate?, location?, projectManager?, approvalLevel?, notes?} → 201
-- PUT /api/projects/{id} (Program write) same minus programId, plus {implementationStatus, isActive}. No delete endpoint — deactivate via edit.
+- PUT /api/projects/{id} (Program write) same minus programId, plus {isActive}. **No `implementationStatus` field** — status no longer edits via PUT.
+- POST /api/projects/{id}/status (Program write) {status} → 200 {id, implementationStatus, closedAt}. Enforced transitions: PLANNED→ONGOING/CANCELLED; ONGOING→COMPLETED/DELAYED/ON_HOLD/CANCELLED; DELAYED/ON_HOLD→ONGOING/CANCELLED; COMPLETED/CANCELLED terminal. 400 "Projects.InvalidStatusTransition" otherwise. Transitioning to COMPLETED is blocked (400 "Projects.HasOpenActivities") unless every child Activity is COMPLETED or CANCELLED — show the detail message verbatim and link to the activities list filtered by this project.
 
 ACTIVITIES:
 - GET /api/activities?projectId=&implementationStatus=&from=&to=&includeInactive= → [{id, projectId, projectName, name, activityType, budget, implementationStatus, isActive}]
 - GET /api/activities/{id} → full detail incl. {activityCategory?, targetGroup?, barangay?, city?, province?, region?, startDate?, endDate?, implementingPartner?, implementingPartnerId?, implementingPartnerName?, responsibleDepartment?, sdgAlignment?, implementationStatus, safeguardingRisk?, evidenceLink?, notes?, participantCount, distributionCount}
 - POST /api/activities (Program write) {projectId, name, activityCategory?, activityType, targetGroup?, barangay?, city?, province?, region?, startDate?, endDate?, budget, implementingPartner?, implementingPartnerId?, responsibleDepartment?, sdgAlignment?, safeguardingRisk?, evidenceLink?, notes?} → 201
-- PUT /api/activities/{id} (Program write) same minus projectId, plus {implementationStatus, isActive}. No delete endpoint.
+- PUT /api/activities/{id} (Program write) same minus projectId, plus {isActive}. **No `implementationStatus` field.**
+- POST /api/activities/{id}/status (Program write) {status, actualBeneficiaries?, actualEndDate?} → 200 {id, implementationStatus, actualBeneficiaries?, actualEndDate?}. Same transition table as Projects. `actualBeneficiaries`/`actualEndDate` are only captured when `status = "COMPLETED"` — show those two fields on the completion dialog specifically, not the general status-change control.
 
 Form rules:
-- activityType ← lookup "activity_type"; region ← "region"; implementationStatus ← "implementation_status" (status selects on edit forms).
+- activityType ← lookup "activity_type" (now includes NEEDS_ASSESSMENT, COMMUNITY_MEETING, TRAINING_SEMINAR); region ← "region".
+- Status is a set of transition buttons (e.g. "Start", "Complete", "Put on hold", "Cancel") driven by the allowed-transitions table above, not a free-text/select status field — disable buttons for transitions not currently allowed.
 - Implementing partner: a combobox fed by GET /api/partners (active only) setting implementingPartnerId. When a partner is linked, the API derives the free-text implementingPartner name server-side — make the free-text field read-only/hidden when a partner is selected (legacy field, being phased out). Invalid partner → 404, inactive partner → 400; show detail.
 - safeguardingRisk ← lookup "safeguarding_category" (NONE, CHILD, VULNERABLE_ADULT, HIGH_RISK) — the API rejects values outside this set (400 Activities.InvalidSafeguardingRisk). Any value other than NONE later gates volunteer enrollment (mention in helper text).
 
-Screens per level: list (filters incl. parent + status + show-inactive), detail (fields + child count + link to filtered child list, e.g. program detail links to /projects?programId=X), create/edit forms (parent preselected when navigating from a parent detail), Admin deactivate for programs (confirm dialog). Activity detail additionally shows tabs for Participants and Volunteers rosters — leave those tabs as placeholders; later prompts fill them.
+Screens per level: list (filters incl. parent + status + show-inactive), detail (fields + child count + link to filtered child list, e.g. program detail links to /projects?programId=X), create/edit forms (parent preselected when navigating from a parent detail), Admin deactivate for programs (confirm dialog). Project/Activity detail show status-transition buttons instead of an editable status field. Activity detail additionally shows tabs for Participants and Volunteers rosters — leave those tabs as placeholders; later prompts fill them.
 ```
 
 ---
@@ -259,32 +266,46 @@ Screens per level: list (filters incl. parent + status + show-inactive), detail 
 ```text
 Build Participants (/participants), the activity participant roster (inside activity detail), and Distributions (/distributions).
 
-PARTICIPANTS (beneficiary registry):
-- GET /api/participants?participantType=&status=&includeInactive= → [{id, fullName, participantType, gender, status, isActive}]
+PARTICIPANTS (beneficiary registry) — Program/Admin role required for EVERY endpoint below, including the GETs (this is PII: phone, vulnerability/safeguarding category, consent status). A Viewer or Finance-role user gets 403 — don't render the Participants nav item for those roles at all, rather than showing a broken page.
+- GET /api/participants?participantType=&beneficiaryType=&status=&includeInactive= → [{id, fullName, participantType, beneficiaryType, gender, status, isActive}]
 - GET /api/participants/{id} → + {ageGroup?, phone?, barangay?, city?, province?, region?, country?, vulnerabilityCategory?, safeguardingCategory?, consentOnFile, remarks?}
-- POST /api/participants (Program write) {fullName, participantType, gender, ageGroup?, phone?, barangay?, city?, province?, region?, country?, vulnerabilityCategory?, safeguardingCategory?, consentOnFile, remarks?} → 201 (status starts "PENDING")
-- PUT /api/participants/{id} (Program write) same + {status, isActive}.
+- POST /api/participants (Program write) {fullName, participantType, beneficiaryType, gender, ageGroup?, phone?, barangay?, city?, province?, region?, country?, vulnerabilityCategory?, safeguardingCategory?, consentOnFile, remarks?} → 201 {..., status: "PENDING", safeguardingWarning, safeguardingMessage?}
+- PUT /api/participants/{id} (Program write) same + {status, isActive} → same shape as POST's response.
 
-Lookups: participantType ← "participant_type", ageGroup ← "age_group", vulnerabilityCategory ← "vulnerability_category", safeguardingCategory ← "safeguarding_category", status ← "beneficiary_status". gender is the enum Male|Female|Unspecified. Status badge colors: PENDING gray, VERIFIED blue, SERVED green, REJECTED red, INACTIVE muted.
+**Consent is a hard gate**: `consentOnFile: false` is rejected outright — 400 "Participants.ConsentRequired", no exceptions. Make the consent checkbox required on the form; don't let the user submit with it unchecked, and surface the 400 verbatim if it somehow gets through.
+**Safeguarding is a soft gate**: an elevated `safeguardingCategory` (anything but NONE) does not block the save — the 201/200 response carries `safeguardingWarning: true` and a `safeguardingMessage`. Render that as a non-blocking warning banner on save, not a form error.
+
+Lookups: participantType ← "participant_type" (now includes COMMUNITY_LEADER, DONOR_REP, OBSERVER), beneficiaryType ← "beneficiary_type", ageGroup ← "age_group", vulnerabilityCategory ← "vulnerability_category", safeguardingCategory ← "safeguarding_category", status ← "beneficiary_status". gender is the enum Male|Female|Unspecified. Status badge colors: PENDING gray, VERIFIED blue, SERVED green, REJECTED red, INACTIVE muted.
 
 ACTIVITY PARTICIPANT ROSTER (fill the placeholder tab on activity detail):
-- GET /api/activities/{activityId}/participants → [{participantId, participantName, participantType, roleInActivity?, attendanceStatus?}]
-- POST /api/activities/{activityId}/participants (Program write) {participantId, roleInActivity?, attendanceStatus?, consentRequired, evidenceLink?, remarks?} → 201. 409 "already enrolled" — show detail.
-- DELETE /api/activities/{activityId}/participants/{participantId} (Program write) → 204.
-Roster tab: table + "Enroll participant" dialog (participant combobox searching GET /api/participants, role, attendance, consent-required checkbox, evidence link, remarks) + remove button per row (confirm).
+- GET /api/activities/{activityId}/participants?includeInactive= → [{participantId, participantName, participantType, roleInActivity?, attendanceStatus?, isActive}]
+- POST /api/activities/{activityId}/participants (Program write) {participantId, roleInActivity?, attendanceStatus?, consentRequired, evidenceLink?, remarks?} → 201. 409 "already enrolled" (only if the roster row is active — re-enrolling a previously removed participant reactivates their row instead) — show detail. `attendanceStatus`, if set, must be one of PRESENT/ONLINE_PRESENT/LATE/EXCUSED/ABSENT (lookup "attendance_status") — 400 "ActivityParticipants.InvalidAttendanceStatus" otherwise. If `consentRequired: true` and the participant's `consentOnFile` is false, 400 "ActivityParticipants.ConsentRequired".
+- PUT /api/activities/{activityId}/participants/{participantId} (Program write) {roleInActivity?, attendanceStatus?, consentRequired, evidenceLink?, remarks?} → 200. Use this to correct/record attendance after enrollment — don't remove-then-re-add.
+- DELETE /api/activities/{activityId}/participants/{participantId} (Program write) → 204. **Soft delete** — the row still exists (isActive: false) for audit history; the default roster GET hides it.
+Roster tab: table (attendance select from the lookup) + "Enroll participant" dialog (participant combobox searching GET /api/participants, role, attendance, consent-required checkbox, evidence link, remarks) + inline attendance edit (PUT) + remove button per row (confirm, soft-delete).
 
-DISTRIBUTIONS (aid handed to a beneficiary):
+DISTRIBUTIONS (aid handed to a beneficiary — recording one also posts a linked Finance Expense; see Prompt 6/7's Expense concepts, same balance and Zakat rules apply here):
 - GET /api/distributions?participantId=&activityId=&distributionType=&from=&to=&includeVoided= → [{id, distributionType, participantId, participantName, totalValuePhp, distributionDate, isVoided}]
-- GET /api/distributions/{id} → + {activityId?, fundingBucketCode?, quantity, location?, fieldVerified, receivedConfirmation, processedBy?, zakatAsnaf?, notes?}
-- POST /api/distributions (Program write) {distributionType, participantId, activityId?, fundingBucketCode?, quantity, totalValuePhp, distributionDate, location?, fieldVerified, receivedConfirmation, processedBy?, zakatAsnaf?, notes?} → 201
-- DELETE /api/distributions/{id} (Admin) → 204 void (409 already voided).
+- GET /api/distributions/{id} → + {activityId, fundingBucketCode, quantity, unitValuePhp, beneficiaryCount, location?, fieldVerified, receivedConfirmation, processedBy?, zakatAsnaf?, notes?, expenseId?}
+- POST /api/distributions (Program write) {distributionType, participantId, activityId, fundingBucketCode, quantity, unitValuePhp, beneficiaryCount, distributionDate, location?, fieldVerified, receivedConfirmation, processedBy?, paymentMethod?, zakatAsnaf?, notes?} → 201 {..., totalValuePhp, expenseId?, remainingBucketBalance}. **`activityId` and `fundingBucketCode` are required** — there is no "informational only, no bucket" path anymore.
+- DELETE /api/distributions/{id} (Admin) → 204 void — reverses the linked expense's bucket effect too (409 already voided).
 
 Create-form rules to surface:
-- distributionType ← lookup "distribution_type". Participant combobox (active only). Optional activity combobox. Optional funding-bucket select (from GET /api/funding-buckets) — note the value is informational; money movement stays with Finance expenses.
-- ZAKAT RULE: if the selected bucket belongs to the Zakat fund's Program bucket (ZAK-PROG), the participant must have an APPROVED, unexpired zakat eligibility case. The zakatAsnaf field may be left empty (the API auto-fills it from the approved case) but if provided must match. Possible 400s to show verbatim from detail: "Distributions.ZakatEligibilityRequired", "Distributions.ZakatAsnafMismatch". Add helper text on the bucket select: "Zakat distributions require an approved eligibility case for the participant" with a link to /zakat-eligibilities?participantId=<selected>.
-- Checkboxes: field verified, received confirmation. totalValuePhp direct input (no FX here), quantity ≥ 1.
+- distributionType ← lookup "distribution_type". Participant combobox (active only). **Activity combobox is required**, not optional — pre-select from the activity detail page when creating from there. **Funding-bucket select (from GET /api/funding-buckets) is required.**
+- Enter **unitValuePhp** and **quantity**; show `totalValuePhp = quantity × unitValuePhp` computed live client-side as a preview, but treat the server response's `totalValuePhp` as the source of truth after submit (never send a client-computed total). `unitValuePhp: 0` is valid — it records an in-kind handout with no linked expense.
+- **beneficiaryCount** is a required field (≥1) — reporting-only (feeds the Zakat asnaf report), not part of the money total.
+- ZAKAT RULE (unchanged, now reachable from every zakat-bucket distribution since the bucket is mandatory): if the selected bucket belongs to the Zakat fund's Program bucket (ZAK-PROG), the participant must have an APPROVED, unexpired zakat eligibility case. The zakatAsnaf field may be left empty (the API auto-fills it from the approved case) but if provided must match. Possible 400s to show verbatim from detail: "Distributions.ZakatEligibilityRequired", "Distributions.ZakatAsnafMismatch", "Expenses.InsufficientBalance" (the bucket doesn't have enough remaining balance). Add helper text on the bucket select: "Zakat distributions require an approved eligibility case for the participant" with a link to /zakat-eligibilities?participantId=<selected>.
+- Checkboxes: field verified, received confirmation.
+- After a successful void, if you show the funding bucket's balance anywhere on screen, refetch it — voiding restores the balance.
+- A direct DELETE on the linked Expense (from a Finance screen) is blocked (409 "Expenses.VoidViaDistribution") — Finance UI should surface "void the distribution instead" and link back here if that 409 comes back.
 
 Screens: participants list/detail/form; distributions list with filters; distribution detail with Admin void; participant detail shows a "Distributions" tab (GET /api/distributions?participantId=) and a "Zakat cases" link.
+
+PROGRAM REPORTS (two more report endpoints, add to /reports or a "Program Reports" tab alongside the Prompt 3 dashboard cards):
+- GET /api/reports/activity-report?projectId= (any authenticated role) → [{activityId, activityName, projectId, projectName, activityType, implementationStatus, actualBeneficiaries?, actualEndDate?, participantCount, presentCount, distributionCount, totalDistributedValuePhp}]. One row per activity. Table: name/project/type/status badge/target vs actual beneficiaries/roster size/present count/distribution count+value. Optional project filter (combobox from GET /api/projects).
+- GET /api/reports/beneficiary-master-list?vulnerabilityCategory=&includeInactive= (Program/Admin only — same PII boundary as Participants) → [{participantId, fullName, participantType, beneficiaryType, vulnerabilityCategory?, safeguardingCategory?, status, consentOnFile, activityCount, distributionCount, totalReceivedValuePhp}]. Table with a vulnerability-category filter select and CSV export; this is the PII-bearing report so gate the nav entry/route the same way as /participants.
+
+Note `program-summary` (Prompt 3) is now sound going forward: every new Distribution requires an `activityId`, so it always rolls up through Program → Project → Activity. Distributions recorded before this refactor with no `activityId` are still excluded from that total — a known, documented gap, not a bug to chase.
 ```
 
 ---
@@ -411,6 +432,81 @@ FINAL POLISH PASS (whole app):
 
 ---
 
+## Prompt 14 — Governance
+
+```text
+Build the Governance module under /governance (Admin-write, any-authenticated-read, same as the rest of the app). This models the org's board/committee structure, meetings, and minutes.
+
+KEY MODELING FACT: there is no separate "Board Trustees" or "Executive Team" entity. A person's board/executive membership is an Assignment (person × org body × role, with dates and a Current/Former status). The roster for any body comes from GET /api/governance/bodies/{id}/members, which resolves Current assignments live — don't try to build a separate "board members" screen from a dedicated endpoint, because there isn't one.
+
+ORG BODIES (self-referencing hierarchy — General Assembly → Board of Trustees → Executive Management → committees/units):
+- GET /api/governance/bodies?bodyType=&includeInactive= → [{id, name, bodyType, parentBodyId?, parentBodyName?, isActive}]
+- GET /api/governance/bodies/{id} → +{quorumRule?, decisionThreshold?, meetingFrequency?, policyBasis?, notes?, currentMemberCount, childBodies: [{id, name, bodyType}]}
+- GET /api/governance/bodies/{id}/members?asOf=&includeFormer= → [{personId, personFullName, assignmentId, roleName, positionTitle?, isPrimary, votingRights, startDate, endDate?, status}] — THIS is the board/exec roster.
+- POST /api/governance/bodies {name, bodyType, parentBodyId?, quorumRule?, decisionThreshold?, meetingFrequency?, policyBasis?, notes?} → 201. Duplicate name → 409; unknown parent → 404.
+- PUT /api/governance/bodies/{id} same + {isActive} → 200. Setting a parent that would create a cycle → 400 "Governance.CircularBodyHierarchy" — show this inline, it means the chosen parent is (transitively) this body's own child.
+- DELETE /api/governance/bodies/{id} → 204. 409 "Governance.BodyInUse" if it has active child bodies or current assignments — show detail.
+Note quorumRule/decisionThreshold are FREE TEXT policy strings from the org's governance manual (e.g. "50% + 1", "75% for strategic decisions") — display them as-is, don't try to parse/compute with them.
+
+PEOPLE:
+- GET /api/governance/people?personCategory=&status=&includeInactive= → [{id, fullName, personCategory, status, isActive}]
+- GET /api/governance/people/{id} → +{email?, contactNumber?, defaultVotingRights, volunteerId?, notes?, assignmentCount}
+- POST /api/governance/people {fullName, personCategory, email?, contactNumber?, defaultVotingRights, volunteerId?, notes?} → 201, status starts ACTIVE
+- PUT /api/governance/people/{id} same + {status, isActive} → 200
+- DELETE /api/governance/people/{id} → 204
+personCategory ← lookup "person_category" (BOARD/EXECUTIVE/MEMBER); status ← "person_status".
+
+GOVERNANCE ROLES:
+- GET /api/governance/roles?roleCategory=&includeInactive= → [{id, name, roleCategory, isActive}]
+- GET /api/governance/roles/{id} → +{defaultBodyId?, defaultBodyName?, defaultVotingRights?, countsForQuorum?, delegable?, notes?}
+- POST /api/governance/roles {name, roleCategory, defaultBodyId?, defaultVotingRights?, countsForQuorum?, delegable?, notes?} → 201
+- PUT /api/governance/roles/{id} same + {isActive} → 200
+roleCategory ← lookup "governance_role_category". defaultVotingRights/countsForQuorum/delegable are free-text rules ("Depends on body", "Yes if eligible") — text inputs, not toggles.
+
+ASSIGNMENTS (person holds a role in a body):
+- GET /api/governance/assignments?personId=&bodyId=&roleId=&status= → [{id, personId, personFullName, orgBodyId, orgBodyName, governanceRoleId, governanceRoleName, isPrimary, status}]
+- GET /api/governance/assignments/{id} → +{positionTitle?, startDate, endDate?, votingRights, isTemporary, notes?}
+- POST /api/governance/assignments {personId, orgBodyId, governanceRoleId, positionTitle?, startDate, isPrimary, votingRights, isTemporary, notes?} → 201, status starts Current. 409 "Governance.DuplicatePrimaryAssignment" if this person already has a primary current assignment elsewhere — explain in the UI that a person can only have ONE primary role at a time (non-primary/secondary assignments are unlimited).
+- PUT /api/governance/assignments/{id} {positionTitle?, isPrimary, votingRights, isTemporary, notes?} → 200 (same 409 rule applies)
+- POST /api/governance/assignments/{id}/end {endDate?} → {id, status, endDate} — terminal, ends the assignment (defaults endDate to today).
+Create form: person combobox, org body combobox, role combobox (optionally filtered to the role's defaultBodyId), start date, primary/voting/temporary checkboxes.
+
+MEETINGS:
+- GET /api/governance/meetings?bodyId=&meetingType=&status=&from=&to= → [{id, orgBodyId, orgBodyName, meetingType, meetingDate, status, hasMinutes}]
+- GET /api/governance/meetings/{id} → +{mode, calledBy?, chairPersonId?, chairPersonName?, secretaryPersonId?, secretaryPersonName?, quorumRequired?, decisionThreshold?, publicationDeadline?, notes?, participantCount, hasMinutes}
+- POST /api/governance/meetings {orgBodyId, meetingType, meetingDate, mode, calledBy?, chairPersonId?, secretaryPersonId?, publicationDeadline?, notes?} → 201, status starts Scheduled. quorumRequired/decisionThreshold are auto-copied from the body (don't send them) and publicationDeadline defaults to meetingDate+10 days if omitted.
+- PUT /api/governance/meetings/{id} {meetingType, meetingDate, mode, calledBy?, chairPersonId?, secretaryPersonId?, status, publicationDeadline?, notes?} → 200. status is a select: Scheduled/Held/Cancelled/Postponed — marking a meeting Held is what unlocks recording minutes.
+- GET /api/governance/meetings/{id}/quorum → {meetingId, eligibleCount, presentCount, countsForQuorumPresentCount, presentPercentage?, quorumRequired?, decisionThreshold?}. Show as a stat strip on the meeting detail page: "X of Y eligible present (Z%)" alongside the raw policy text — do not compute a pass/fail verdict, the org's rule is often conditional prose.
+meetingType ← lookup "meeting_type"; mode ← "meeting_mode".
+
+MEETING PARTICIPANTS (roster + attendance/voting):
+- GET /api/governance/meetings/{meetingId}/participants → [{personId, personFullName, roleInMeeting?, attendanceStatus, votingRight, countsForQuorum}]
+- POST /api/governance/meetings/{meetingId}/participants {personId, assignmentId?, roleInMeeting?, attendanceStatus, votingRight, countsForQuorum, participationMode?, remarks?} → 201. 409 if already added; 400 "Governance.AssignmentPersonMismatch" if the chosen assignmentId doesn't belong to the chosen person — when a person combobox is selected, filter the assignment dropdown to that person's assignments only to avoid this.
+- DELETE /api/governance/meetings/{meetingId}/participants/{personId} → 204
+attendanceStatus ← lookup "attendance_status"; roleInMeeting ← "meeting_role"; participationMode ← "meeting_mode".
+
+MINUTES + DECISIONS (minutes are 1:1 per meeting; decisions are a separate list under a minutes record):
+- GET /api/governance/meetings/{meetingId}/minutes → {id, meetingId, preparedByPersonId?, preparedByPersonName?, approvedByPersonId?, approvedByPersonName?, summary?, nextMeetingDate?, documentLink?, publicationStatus, decisionCount}
+- POST /api/governance/meetings/{meetingId}/minutes {preparedByPersonId?, approvedByPersonId?, summary?, nextMeetingDate?, documentLink?} → 201, status starts Draft. 400 "Governance.MeetingNotHeld" if the meeting isn't Held yet; 409 "Governance.MinutesAlreadyExist" if minutes already exist — route the user to edit instead.
+- PUT /api/governance/meetings/{meetingId}/minutes same + {publicationStatus} → 200. publicationStatus select: Draft/Submitted/Approved/Published/Returned. 409 "Governance.MinutesPublished" once Published — lock the edit form and show a read-only view instead.
+- GET /api/governance/minutes/{minutesId}/decisions → [{id, decisionText, actionPoints?, responsiblePersonId?, responsiblePersonName?, dueDate?, decisionStatus}]
+- POST /api/governance/minutes/{minutesId}/decisions {decisionText, actionPoints?, responsiblePersonId?, dueDate?, decisionStatus, notes?} → 201. Also 409 once minutes are Published.
+- PUT /api/governance/decisions/{id} same → 200
+decisionStatus ← lookup "decision_status" (OPEN/IN_PROGRESS/COMPLETED/CANCELLED).
+
+Screens:
+1. /governance/bodies — hierarchy tree or indented list (use parentBodyId to nest), body type badges, click into detail showing policy fields + child bodies + "View current members" (→ bodies/{id}/members) + "Meetings" tab (→ meetings?bodyId=).
+2. /governance/people — list/detail/form as usual; person detail shows an "Assignments" tab (assignments?personId=) and a "Meetings attended" tab if you have time.
+3. /governance/roles — simple list/detail/form.
+4. Assignment management lives on the Person detail page and the OrgBody detail page (both link to a shared "New assignment" dialog prefilling whichever side you came from).
+5. /governance/meetings — list (filters: body, type, status, date range) → detail page with tabs: Overview (quorum stat strip + policy text), Participants (roster + add-participant dialog), Minutes (create/edit/publish flow, nested Decisions list with add/edit).
+6. Governance summary widget on the main dashboard (optional) or its own /governance report page: GET /api/reports/governance-summary?from=&to= → [{orgBodyId, orgBodyName, currentMemberCount, meetingsHeld, minutesPublished, minutesPending, openDecisions}].
+
+Add "Governance" to the sidebar nav group list from Prompt 2 (Admin-focused, but readable by everyone).
+```
+
+---
+
 ## Endpoint coverage checklist
 
-Every API endpoint appears in exactly one prompt: Auth 7 (P0/P2, register in P13), Users 3 (P13), Lookups 5 (P0 read, P13 manage), Donors 4 (P4), Donations 4 (P5), Other Income 4 (P6), Expenses 4 (P6), Funds 1 + Buckets 2 (P7), Finance reports 7 (P3/P7), Programs 5 / Projects 4 / Activities 4 (P8), Participants 4 + Roster 3 + Distributions 4 + Program reports 2 (P9/P3), Partners 5 (P10), Volunteers 5 + Volunteer roster 3 (P10), Sponsorships 5 + report 1 (P11), Zakat 6 (P12) — **82 endpoints**.
+Every API endpoint appears in exactly one prompt: Auth 7 (P0/P2, register in P13), Users 3 (P13), Lookups 5 (P0 read, P13 manage), Donors 4 (P4), Donations 4 (P5), Other Income 4 (P6), Expenses 4 (P6), Funds 1 + Buckets 2 (P7), Finance reports 7 (P3/P7), Programs 5 / Projects 5 (incl. status transition) / Activities 5 (incl. status transition) (P8), Participants 4 + Roster 4 (incl. attendance update) + Distributions 4 + Program reports 4 (program-summary, distribution-summary, activity-report, beneficiary-master-list) (P9/P3), Partners 5 (P10), Volunteers 5 + Volunteer roster 3 (P10), Sponsorships 5 + report 1 (P11), Zakat 6 (P12), **Governance 35** (P14: People 5, OrgBodies 6, Roles 4, Assignments 5, Meetings 5, MeetingParticipants 3, Minutes 3, Decisions 3, governance-summary report 1) — **134 endpoints** as of Sprint 6 (was 129 at Sprint 5; Sprint 6 added Project/Activity status-transition endpoints, the roster attendance-update endpoint, and the activity-report + beneficiary-master-list reports — see SYSTEM_REQUIREMENTS.md §6). (Donor Engagements — Create/Update/List, 3 endpoints — shipped in Sprint 5 alongside Governance but is not yet covered by a dedicated prompt; fold it into Prompt 4 alongside Donors when picking this playbook back up.)

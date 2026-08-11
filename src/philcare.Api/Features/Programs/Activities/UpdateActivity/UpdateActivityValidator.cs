@@ -19,7 +19,6 @@ public sealed class UpdateActivityValidator : AbstractValidator<UpdateActivityRe
         RuleFor(x => x.ImplementingPartnerId).GreaterThan(0).When(x => x.ImplementingPartnerId is not null);
         RuleFor(x => x.ResponsibleDepartment).MaximumLength(200);
         RuleFor(x => x.SdgAlignment).MaximumLength(100);
-        RuleFor(x => x.ImplementationStatus).NotEmpty().MaximumLength(50);
         RuleFor(x => x.SafeguardingRisk).MaximumLength(100);
         RuleFor(x => x.EvidenceLink).MaximumLength(500);
         RuleFor(x => x.Notes).MaximumLength(1000);

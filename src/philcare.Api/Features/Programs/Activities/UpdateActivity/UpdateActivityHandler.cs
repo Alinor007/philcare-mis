@@ -66,7 +66,8 @@ public sealed class UpdateActivityHandler(AppDbContext db)
         activity.ImplementingPartnerId = request.ImplementingPartnerId;
         activity.ResponsibleDepartment = request.ResponsibleDepartment;
         activity.SdgAlignment = request.SdgAlignment;
-        activity.ImplementationStatus = request.ImplementationStatus;
+        // ImplementationStatus is intentionally not settable here — status changes go through
+        // POST /api/activities/{id}/status, which enforces the transition table.
         activity.SafeguardingRisk = request.SafeguardingRisk;
         activity.EvidenceLink = request.EvidenceLink;
         activity.Notes = request.Notes;

@@ -16,17 +16,20 @@ public class ActivityParticipantConfiguration : IEntityTypeConfiguration<Activit
         builder.Property(ap => ap.AttendanceStatus).HasMaxLength(50);
         builder.Property(ap => ap.EvidenceLink).HasMaxLength(500);
         builder.Property(ap => ap.Remarks).HasMaxLength(1000);
+        builder.Property(ap => ap.IsActive).HasDefaultValue(true);
 
-        builder.HasIndex(ap => new { ap.ActivityId, ap.ParticipantId }).IsUnique();
+        // One roster row per staff member per activity; soft-delete means a re-assignment
+        // reactivates the existing row rather than inserting a duplicate.
+        builder.HasIndex(ap => new { ap.ActivityId, ap.StaffMemberId }).IsUnique();
 
         builder.HasOne(ap => ap.Activity)
             .WithMany(a => a.ActivityParticipants)
             .HasForeignKey(ap => ap.ActivityId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(ap => ap.Participant)
-            .WithMany(p => p.ActivityParticipants)
-            .HasForeignKey(ap => ap.ParticipantId)
+        builder.HasOne(ap => ap.StaffMember)
+            .WithMany(s => s.ActivityParticipants)
+            .HasForeignKey(ap => ap.StaffMemberId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

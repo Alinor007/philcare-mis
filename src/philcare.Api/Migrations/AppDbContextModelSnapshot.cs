@@ -688,6 +688,11 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("ConcurrencyStamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -888,6 +893,531 @@ namespace philcare.Api.Migrations
                     b.ToTable("OtherIncomes", (string)null);
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Assignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("GovernanceRoleId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsPrimary")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool?>("IsPrimaryCurrent")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsTemporary")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("OrgBodyId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PositionTitle")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("VotingRights")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GovernanceRoleId");
+
+                    b.HasIndex("OrgBodyId");
+
+                    b.HasIndex("PersonId", "IsPrimaryCurrent")
+                        .IsUnique();
+
+                    b.HasIndex("PersonId", "OrgBodyId", "Status");
+
+                    b.ToTable("Assignments", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.GovernanceRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CountsForQuorum")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("DefaultBodyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DefaultVotingRights")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Delegable")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("RoleCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DefaultBodyId");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("GovernanceRoles", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Meeting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CalledBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int?>("ChairPersonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DecisionThreshold")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("MeetingDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("MeetingType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("OrgBodyId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PublicationDeadline")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("QuorumRequired")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int?>("SecretaryPersonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChairPersonId");
+
+                    b.HasIndex("SecretaryPersonId");
+
+                    b.HasIndex("OrgBodyId", "MeetingDate");
+
+                    b.ToTable("Meetings", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingDecision", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionPoints")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DecisionStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("DecisionText")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("MeetingMinutesId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int?>("ResponsiblePersonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MeetingMinutesId");
+
+                    b.HasIndex("ResponsiblePersonId");
+
+                    b.ToTable("MeetingDecisions", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingMinutes", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ApprovedByPersonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DocumentLink")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextMeetingDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("PreparedByPersonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PublicationStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedByPersonId");
+
+                    b.HasIndex("MeetingId")
+                        .IsUnique();
+
+                    b.HasIndex("PreparedByPersonId");
+
+                    b.ToTable("MeetingMinutes", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingParticipant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("AttendanceStatus")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<bool>("CountsForQuorum")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("MeetingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ParticipationMode")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<int>("PersonId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("RoleInMeeting")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("VotingRight")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId");
+
+                    b.HasIndex("PersonId");
+
+                    b.HasIndex("MeetingId", "PersonId")
+                        .IsUnique();
+
+                    b.ToTable("MeetingParticipants", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.OrgBody", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BodyType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("DecisionThreshold")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("MeetingFrequency")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int?>("ParentBodyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PolicyBasis")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("QuorumRule")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("ParentBodyId");
+
+                    b.ToTable("OrgBodies", (string)null);
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Person", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContactNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("DefaultVotingRights")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<string>("PersonCategory")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("VolunteerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VolunteerId");
+
+                    b.ToTable("GovernancePeople", (string)null);
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Partners.Domain.Partner", b =>
                 {
                     b.Property<int>("Id")
@@ -993,6 +1523,12 @@ namespace philcare.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("ActualBeneficiaries")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Barangay")
                         .HasMaxLength(100)
@@ -1118,6 +1654,11 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
                     b.Property<int>("ParticipantId")
                         .HasColumnType("int");
 
@@ -1209,6 +1750,11 @@ namespace philcare.Api.Migrations
                     b.Property<int?>("ActivityId")
                         .HasColumnType("int");
 
+                    b.Property<int>("BeneficiaryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1222,6 +1768,9 @@ namespace philcare.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("ExpenseId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("FieldVerified")
                         .HasColumnType("tinyint(1)");
@@ -1260,6 +1809,12 @@ namespace philcare.Api.Migrations
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
+                    b.Property<decimal>("UnitValuePhp")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1273,6 +1828,10 @@ namespace philcare.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityId");
+
+                    b.HasIndex("DistributionDate");
+
+                    b.HasIndex("ExpenseId");
 
                     b.HasIndex("FundingBucketCode");
 
@@ -1378,6 +1937,10 @@ namespace philcare.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FullName");
+
+                    b.HasIndex("ParticipantType", "Status");
+
                     b.ToTable("Participants", (string)null);
                 });
 
@@ -1392,6 +1955,9 @@ namespace philcare.Api.Migrations
                     b.Property<string>("ApprovalLevel")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -1952,6 +2518,147 @@ namespace philcare.Api.Migrations
                     b.Navigation("FundingBucket");
                 });
 
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Assignment", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.GovernanceRole", "GovernanceRole")
+                        .WithMany("Assignments")
+                        .HasForeignKey("GovernanceRoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.OrgBody", "OrgBody")
+                        .WithMany("Assignments")
+                        .HasForeignKey("OrgBodyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "Person")
+                        .WithMany("Assignments")
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GovernanceRole");
+
+                    b.Navigation("OrgBody");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.GovernanceRole", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.OrgBody", "DefaultBody")
+                        .WithMany()
+                        .HasForeignKey("DefaultBodyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DefaultBody");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Meeting", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "ChairPerson")
+                        .WithMany()
+                        .HasForeignKey("ChairPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.OrgBody", "OrgBody")
+                        .WithMany("Meetings")
+                        .HasForeignKey("OrgBodyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "SecretaryPerson")
+                        .WithMany()
+                        .HasForeignKey("SecretaryPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ChairPerson");
+
+                    b.Navigation("OrgBody");
+
+                    b.Navigation("SecretaryPerson");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingDecision", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.MeetingMinutes", "MeetingMinutes")
+                        .WithMany("Decisions")
+                        .HasForeignKey("MeetingMinutesId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "ResponsiblePerson")
+                        .WithMany()
+                        .HasForeignKey("ResponsiblePersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("MeetingMinutes");
+
+                    b.Navigation("ResponsiblePerson");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingMinutes", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "ApprovedByPerson")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Meeting", "Meeting")
+                        .WithOne("Minutes")
+                        .HasForeignKey("philcare.Api.Features.Governance.Domain.MeetingMinutes", "MeetingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "PreparedByPerson")
+                        .WithMany()
+                        .HasForeignKey("PreparedByPersonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ApprovedByPerson");
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("PreparedByPerson");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingParticipant", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Assignment", "Assignment")
+                        .WithMany()
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Meeting", "Meeting")
+                        .WithMany("Participants")
+                        .HasForeignKey("MeetingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("philcare.Api.Features.Governance.Domain.Person", "Person")
+                        .WithMany()
+                        .HasForeignKey("PersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("Meeting");
+
+                    b.Navigation("Person");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.OrgBody", b =>
+                {
+                    b.HasOne("philcare.Api.Features.Governance.Domain.OrgBody", "ParentBody")
+                        .WithMany("ChildBodies")
+                        .HasForeignKey("ParentBodyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ParentBody");
+                });
+
             modelBuilder.Entity("philcare.Api.Features.Programs.Domain.Activity", b =>
                 {
                     b.HasOne("philcare.Api.Features.Partners.Domain.Partner", "ImplementingPartnerRef")
@@ -1996,6 +2703,11 @@ namespace philcare.Api.Migrations
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Expense", "Expense")
+                        .WithMany()
+                        .HasForeignKey("ExpenseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("philcare.Api.Features.Programs.Domain.Participant", "Participant")
                         .WithMany("Distributions")
                         .HasForeignKey("ParticipantId")
@@ -2003,6 +2715,8 @@ namespace philcare.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Activity");
+
+                    b.Navigation("Expense");
 
                     b.Navigation("Participant");
                 });
@@ -2097,6 +2811,37 @@ namespace philcare.Api.Migrations
             modelBuilder.Entity("philcare.Api.Features.Finance.Domain.OtherIncome", b =>
                 {
                     b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.GovernanceRole", b =>
+                {
+                    b.Navigation("Assignments");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Meeting", b =>
+                {
+                    b.Navigation("Minutes");
+
+                    b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.MeetingMinutes", b =>
+                {
+                    b.Navigation("Decisions");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.OrgBody", b =>
+                {
+                    b.Navigation("Assignments");
+
+                    b.Navigation("ChildBodies");
+
+                    b.Navigation("Meetings");
+                });
+
+            modelBuilder.Entity("philcare.Api.Features.Governance.Domain.Person", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("philcare.Api.Features.Partners.Domain.Partner", b =>

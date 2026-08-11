@@ -13,6 +13,6 @@ public sealed class SubmitZakatEligibilityEndpoint : IEndpoint
         })
         .WithName("SubmitZakatEligibility")
         .WithTags("ZakatEligibility")
-        .RequireAuthorization("Program");
+        .RequireAuthorization("Casework");
     }
 }

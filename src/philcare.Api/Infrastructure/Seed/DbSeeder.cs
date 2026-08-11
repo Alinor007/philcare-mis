@@ -14,6 +14,20 @@ public sealed record SeedOptions
 
     public string AdminEmail { get; init; } = string.Empty;
     public string AdminPassword { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Zakat &amp; Donations Collection Department account (<see cref="UserRole.ZakatDonations"/>).
+    /// Left blank in an environment that doesn't need it — the seeder logs and skips.
+    /// </summary>
+    public string ZakatDonationsEmail { get; init; } = string.Empty;
+    public string ZakatDonationsPassword { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Escape hatch: when true, seed-owned label/sort-order relabelling is applied even if a
+    /// row's UpdatedBy doesn't match the "system" sentinel — i.e. force every row back to the
+    /// JSON regardless of who last touched it. Off by default; admin edits win by default.
+    /// </summary>
+    public bool ForceLookupLabels { get; init; }
 }
 
 public sealed record LookupSeedRow(string Category, string Code, string Label, int SortOrder);
@@ -41,37 +55,70 @@ public sealed class DbSeeder(
             await db.Database.MigrateAsync(cancellationToken);
         }
 
-        await SeedAdminUserAsync(cancellationToken);
+        await SeedUsersAsync(cancellationToken);
         await SeedLookupsAsync(cancellationToken);
         await SeedFinanceAsync(cancellationToken);
     }
 
-    private async Task SeedAdminUserAsync(CancellationToken cancellationToken)
+    private async Task SeedUsersAsync(CancellationToken cancellationToken)
     {
         var seedOptions = configuration.GetSection(SeedOptions.SectionName).Get<SeedOptions>();
 
-        if (seedOptions is null || string.IsNullOrWhiteSpace(seedOptions.AdminEmail))
+        if (seedOptions is null)
         {
-            logger.LogWarning("Seed:AdminEmail is not configured; skipping admin user seed.");
+            logger.LogWarning("Seed section is not configured; skipping user seed.");
             return;
         }
 
-        var adminExists = await db.Users.AnyAsync(u => u.Email == seedOptions.AdminEmail, cancellationToken);
-        if (adminExists)
+        await SeedUserAsync(seedOptions.AdminEmail, seedOptions.AdminPassword, UserRole.Admin, "Seed:AdminEmail", cancellationToken);
+
+        // Zakat & Donations Collection Department — donor management, fundraising and zakat casework.
+        await SeedUserAsync(
+            seedOptions.ZakatDonationsEmail,
+            seedOptions.ZakatDonationsPassword,
+            UserRole.ZakatDonations,
+            "Seed:ZakatDonationsEmail",
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Idempotent per email: an already-present account is left completely untouched, so a
+    /// password an admin has since rotated is never reset by a redeploy.
+    /// </summary>
+    private async Task SeedUserAsync(
+        string email,
+        string password,
+        UserRole role,
+        string configKeyForLogging,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            logger.LogWarning("{ConfigKey} is not configured; skipping {Role} user seed.", configKeyForLogging, role);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            logger.LogWarning("No password configured for {Email}; skipping {Role} user seed.", email, role);
+            return;
+        }
+
+        if (await db.Users.AnyAsync(u => u.Email == email, cancellationToken))
         {
             return;
         }
 
         db.Users.Add(new User
         {
-            Email = seedOptions.AdminEmail,
-            PasswordHash = passwordHasher.Hash(seedOptions.AdminPassword),
-            Role = UserRole.Admin,
+            Email = email,
+            PasswordHash = passwordHasher.Hash(password),
+            Role = role,
             IsActive = true
         });
 
         await db.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Seeded admin user {Email}", seedOptions.AdminEmail);
+        logger.LogInformation("Seeded {Role} user {Email}", role, email);
     }
 
     private async Task SeedLookupsAsync(CancellationToken cancellationToken)
@@ -94,32 +141,70 @@ public sealed class DbSeeder(
             return;
         }
 
-        // Additive: only insert (category, code) pairs not already present, so new lookup
-        // categories introduced in later sprints seed into databases that already have data.
-        var existingKeys = (await db.LookupItems
-                .Select(l => new { l.Category, l.Code })
-                .ToListAsync(cancellationToken))
-            .Select(l => (l.Category, l.Code))
-            .ToHashSet();
+        var forceLabels = configuration.GetSection(SeedOptions.SectionName).Get<SeedOptions>()?.ForceLookupLabels ?? false;
 
-        var newRows = rows.Where(r => !existingKeys.Contains((r.Category, r.Code))).ToList();
+        // Insert new (category, code) pairs additively — new lookup categories introduced in
+        // later sprints seed into databases that already have data — and reconcile the label/
+        // sort order of rows that already exist, but ONLY while they're still seed-owned (i.e.
+        // nobody has edited them via /admin/lookups since). UpdatedBy is the ownership signal:
+        // a row last touched by the seeder reads AuditInterceptor.SystemUser; a row last touched
+        // by an admin reads their email. We never touch IsActive or delete a row for either kind
+        // — an admin's deactivation must survive every restart regardless of who "owns" the label.
+        var existing = await db.LookupItems.ToListAsync(cancellationToken);
+        var byKey = existing.ToDictionary(l => (l.Category, l.Code));
 
-        if (newRows.Count == 0)
+        var inserted = 0;
+        var updated = 0;
+        var preserved = new List<string>();
+
+        foreach (var row in rows)
+        {
+            if (!byKey.TryGetValue((row.Category, row.Code), out var item))
+            {
+                db.LookupItems.Add(new LookupItem
+                {
+                    Category = row.Category,
+                    Code = row.Code,
+                    Label = row.Label,
+                    SortOrder = row.SortOrder,
+                    IsActive = true
+                });
+                inserted++;
+                continue;
+            }
+
+            if (item.Label == row.Label && item.SortOrder == row.SortOrder)
+            {
+                continue;
+            }
+
+            var isSeedOwned = item.UpdatedBy is null || item.UpdatedBy == AuditInterceptor.SystemUser;
+            if (isSeedOwned || forceLabels)
+            {
+                item.Label = row.Label;
+                item.SortOrder = row.SortOrder;
+                updated++;
+            }
+            else
+            {
+                preserved.Add($"{item.Category}.{item.Code}");
+            }
+        }
+
+        if (inserted == 0 && updated == 0)
         {
             return;
         }
 
-        db.LookupItems.AddRange(newRows.Select(r => new LookupItem
-        {
-            Category = r.Category,
-            Code = r.Code,
-            Label = r.Label,
-            SortOrder = r.SortOrder,
-            IsActive = true
-        }));
-
         await db.SaveChangesAsync(cancellationToken);
-        logger.LogInformation("Seeded {Count} new lookup items", newRows.Count);
+        logger.LogInformation(
+            "Lookups: {Inserted} inserted, {Updated} relabelled, {Skipped} preserved (admin-edited)",
+            inserted, updated, preserved.Count);
+
+        if (preserved.Count > 0)
+        {
+            logger.LogInformation("Preserved admin-edited lookups: {Codes}", string.Join(", ", preserved));
+        }
     }
 
     private async Task SeedFinanceAsync(CancellationToken cancellationToken)

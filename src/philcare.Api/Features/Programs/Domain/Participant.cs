@@ -11,11 +11,11 @@ public enum Gender
 
 public class Participant : Entity
 {
-    public string FullName { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty; //linked to Person.FullName or ProjectBeneficiary.FullName
     public string ParticipantType { get; set; } = string.Empty; // lookup: participant_type
     // Individual vs institution/organization — an institution (school, madrasah) or community
     // organization can itself be registered as an aid recipient, not just a natural person.
-    public string BeneficiaryType { get; set; } = "INDIVIDUAL"; // lookup: beneficiary_type
+    public string BeneficiaryType { get; set; } = "INDIVIDUAL"; // lookup: beneficiary_type /can be removed
     public Gender Gender { get; set; } = Gender.Unspecified;
     public string? AgeGroup { get; set; } // lookup: age_group
     public string? Phone { get; set; }
@@ -33,6 +33,6 @@ public class Participant : Entity
     public string? Remarks { get; set; }
     public bool IsActive { get; set; } = true;
 
-    public List<ActivityParticipant> ActivityParticipants { get; set; } = [];
+    // ActivityParticipants moved to StaffMember — that join is now the Activity staffing roster.
     public List<Distribution> Distributions { get; set; } = [];
 }

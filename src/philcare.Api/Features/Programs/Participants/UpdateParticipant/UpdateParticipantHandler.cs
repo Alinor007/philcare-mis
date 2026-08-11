@@ -15,6 +15,15 @@ public sealed class UpdateParticipantHandler(AppDbContext db)
             return Result.Failure<UpdateParticipantResponse>(Error.NotFound("Participants.NotFound", "Participant not found."));
         }
 
+        if (!request.ConsentOnFile)
+        {
+            return Result.Failure<UpdateParticipantResponse>(
+                Error.Validation("Participants.ConsentRequired", "Consent must be on file before a participant can be registered."));
+        }
+
+        var hasSafeguardingRisk = !string.IsNullOrWhiteSpace(request.SafeguardingCategory)
+            && !string.Equals(request.SafeguardingCategory, "NONE", StringComparison.OrdinalIgnoreCase);
+
         participant.FullName = request.FullName;
         participant.ParticipantType = request.ParticipantType;
         participant.BeneficiaryType = request.BeneficiaryType;
@@ -36,6 +45,8 @@ public sealed class UpdateParticipantHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateParticipantResponse(
-            participant.Id, participant.FullName, participant.ParticipantType, participant.BeneficiaryType, participant.Gender, participant.Status, participant.IsActive));
+            participant.Id, participant.FullName, participant.ParticipantType, participant.BeneficiaryType, participant.Gender,
+            participant.Status, participant.IsActive, hasSafeguardingRisk,
+            hasSafeguardingRisk ? "Elevated safeguarding risk — officer must be notified." : null));
     }
 }

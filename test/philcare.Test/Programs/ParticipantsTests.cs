@@ -38,6 +38,36 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.AccessToken);
     }
 
+    private async Task AuthenticateAsViewerAsync()
+    {
+        // Registering a user with a specific role requires an Admin bearer token.
+        await AuthenticateAsAdminAsync();
+
+        var email = $"viewer-{Guid.NewGuid():N}@philcare.local";
+        var registerResponse = await _client.PostAsJsonAsync("/api/auth/register", new
+        {
+            Email = email,
+            Password = "Viewer@12345",
+            Role = "Viewer"
+        });
+        registerResponse.EnsureSuccessStatusCode();
+
+        var loginResponse = await _client.PostAsJsonAsync("/api/auth/login", new { Email = email, Password = "Viewer@12345" });
+        loginResponse.EnsureSuccessStatusCode();
+        var body = await loginResponse.Content.ReadFromJsonAsync<LoginResponseDto>(JsonOptions);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.AccessToken);
+    }
+
+    [Fact]
+    public async Task GetParticipants_AsViewer_ReturnsForbidden()
+    {
+        await AuthenticateAsViewerAsync();
+
+        var response = await _client.GetAsync("/api/participants");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     [Fact]
     public async Task CreateParticipant_ValidRequest_DefaultsStatusToPending()
     {
@@ -79,6 +109,47 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
+    public async Task CreateParticipant_ConsentNotOnFile_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/participants", new
+        {
+            FullName = $"Participant-{Guid.NewGuid():N}",
+            ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
+            Gender = "Male",
+            ConsentOnFile = false
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
+        Assert.Equal("Participants.ConsentRequired", problem!.Title);
+    }
+
+    [Fact]
+    public async Task CreateParticipant_ElevatedSafeguardingCategory_SucceedsWithWarning()
+    {
+        await AuthenticateAsAdminAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/participants", new
+        {
+            FullName = $"Participant-{Guid.NewGuid():N}",
+            ParticipantType = "BENEFICIARY",
+            BeneficiaryType = "INDIVIDUAL",
+            Gender = "Male",
+            SafeguardingCategory = "HIGH_RISK",
+            ConsentOnFile = true
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+
+        Assert.True(participant!.SafeguardingWarning);
+        Assert.NotNull(participant.SafeguardingMessage);
+    }
+
+    [Fact]
     public async Task GetParticipants_FilteredByType_ReturnsOnlyMatching()
     {
         await AuthenticateAsAdminAsync();
@@ -90,7 +161,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
             ParticipantType = uniqueType,
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
-            ConsentOnFile = false
+            ConsentOnFile = true
         });
         createResponse.EnsureSuccessStatusCode();
 
@@ -123,7 +194,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
             ParticipantType = "BENEFICIARY",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
-            ConsentOnFile = false
+            ConsentOnFile = true
         });
         createResponse.EnsureSuccessStatusCode();
         var participant = await createResponse.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
@@ -156,4 +227,6 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
     private sealed record ParticipantListItemDto(int Id, string FullName, string ParticipantType, string Gender, string Status, bool IsActive);
 
     private sealed record ParticipantDetailDto(int Id, string FullName, string Status, string? VulnerabilityCategory, bool ConsentOnFile);
+
+    private sealed record ProblemDetailsDto(string Title, string Detail);
 }

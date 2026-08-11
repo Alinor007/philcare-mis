@@ -29,4 +29,6 @@ public sealed record CreateParticipantResponse(
     string? SafeguardingCategory,
     bool ConsentOnFile,
     string Status,
-    bool IsActive);
+    bool IsActive,
+    bool SafeguardingWarning,
+    string? SafeguardingMessage);

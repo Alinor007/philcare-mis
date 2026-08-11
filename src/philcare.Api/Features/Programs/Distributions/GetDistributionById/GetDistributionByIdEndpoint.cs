@@ -7,12 +7,14 @@ namespace philcare.Api.Features.Programs.Distributions.GetDistributionById;
 public sealed record DistributionDetailResponse(
     int Id,
     string DistributionType,
-    int ParticipantId,
-    string ParticipantName,
+    int BeneficiaryId,
+    string BeneficiaryName,
     int? ActivityId,
     string? FundingBucketCode,
     int Quantity,
+    decimal UnitValuePhp,
     decimal TotalValuePhp,
+    int BeneficiaryCount,
     DateTime DistributionDate,
     string? Location,
     bool FieldVerified,
@@ -20,7 +22,11 @@ public sealed record DistributionDetailResponse(
     string? ProcessedBy,
     string? ZakatAsnaf,
     string? Notes,
-    bool IsVoided);
+    bool IsVoided,
+    // Null for pre-Sprint-6 rows and for zero-value in-kind handouts, which post no expense.
+    // The UI uses it to link through to the ledger entry and to explain why a direct expense
+    // void is blocked (409 Expenses.VoidViaDistribution).
+    int? ExpenseId);
 
 public sealed class GetDistributionByIdEndpoint : IEndpoint
 {
@@ -31,9 +37,9 @@ public sealed class GetDistributionByIdEndpoint : IEndpoint
             var distribution = await db.Distributions
                 .Where(d => d.Id == id)
                 .Select(d => new DistributionDetailResponse(
-                    d.Id, d.DistributionType, d.ParticipantId, d.Participant.FullName, d.ActivityId, d.FundingBucketCode,
-                    d.Quantity, d.TotalValuePhp, d.DistributionDate, d.Location, d.FieldVerified, d.ReceivedConfirmation,
-                    d.ProcessedBy, d.ZakatAsnaf, d.Notes, d.IsVoided))
+                    d.Id, d.DistributionType, d.BeneficiaryId, d.Beneficiary.FullName, d.ActivityId, d.FundingBucketCode,
+                    d.Quantity, d.UnitValuePhp, d.TotalValuePhp, d.BeneficiaryCount, d.DistributionDate, d.Location,
+                    d.FieldVerified, d.ReceivedConfirmation, d.ProcessedBy, d.ZakatAsnaf, d.Notes, d.IsVoided, d.ExpenseId))
                 .FirstOrDefaultAsync(ct);
 
             if (distribution is null)

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Domain;
 using philcare.Api.Common.Persistence;
 using philcare.Api.Features.Programs.Domain;
+using philcare.Api.Features.ReferenceData.Domain;
 
 namespace philcare.Api.Features.Programs.ActivityParticipants.AddActivityParticipant;
 
@@ -17,37 +18,76 @@ public sealed class AddActivityParticipantHandler(AppDbContext db)
             return Result.Failure<AddActivityParticipantResponse>(Error.NotFound("ActivityParticipants.ActivityNotFound", "Activity not found."));
         }
 
-        var participant = await db.Participants.FirstOrDefaultAsync(p => p.Id == request.ParticipantId, cancellationToken);
+        var staffMember = await db.StaffMembers.FirstOrDefaultAsync(p => p.Id == request.StaffMemberId, cancellationToken);
 
-        if (participant is null)
+        if (staffMember is null)
         {
-            return Result.Failure<AddActivityParticipantResponse>(Error.NotFound("ActivityParticipants.ParticipantNotFound", "Participant not found."));
+            return Result.Failure<AddActivityParticipantResponse>(Error.NotFound("ActivityParticipants.StaffMemberNotFound", "Staff member not found."));
         }
 
-        var alreadyEnrolled = await db.ActivityParticipants
-            .AnyAsync(ap => ap.ActivityId == activityId && ap.ParticipantId == request.ParticipantId, cancellationToken);
-
-        if (alreadyEnrolled)
+        if (!staffMember.IsActive)
         {
             return Result.Failure<AddActivityParticipantResponse>(
-                Error.Conflict("ActivityParticipants.AlreadyEnrolled", "This participant is already enrolled in this activity."));
+                Error.Validation("ActivityParticipants.StaffMemberInactive", "Cannot assign an inactive staff member."));
         }
 
-        var link = new ActivityParticipant
-        {
-            ActivityId = activityId,
-            ParticipantId = request.ParticipantId,
-            RoleInActivity = request.RoleInActivity,
-            AttendanceStatus = request.AttendanceStatus,
-            ConsentRequired = request.ConsentRequired,
-            EvidenceLink = request.EvidenceLink,
-            Remarks = request.Remarks
-        };
+        // Soft delete means a prior removal leaves the (ActivityId, StaffMemberId) row behind —
+        // the unique index means a re-enrollment must reactivate it, never insert a second row.
+        var existingLink = await db.ActivityParticipants
+            .FirstOrDefaultAsync(ap => ap.ActivityId == activityId && ap.StaffMemberId == request.StaffMemberId, cancellationToken);
 
-        db.ActivityParticipants.Add(link);
+        if (existingLink is { IsActive: true })
+        {
+            return Result.Failure<AddActivityParticipantResponse>(
+                Error.Conflict("ActivityParticipants.AlreadyEnrolled", "This staff member is already assigned to this activity."));
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.AttendanceStatus))
+        {
+            var validAttendanceStatus = await db.LookupItems.AnyAsync(
+                l => l.Category == LookupCategory.AttendanceStatus && l.Code == request.AttendanceStatus, cancellationToken);
+
+            if (!validAttendanceStatus)
+            {
+                return Result.Failure<AddActivityParticipantResponse>(
+                    Error.Validation("ActivityParticipants.InvalidAttendanceStatus", "Attendance status must be a valid attendance_status lookup code."));
+            }
+        }
+
+        // No consent check: this roster now holds staff, and the gate compared ConsentRequired
+        // against a beneficiary's ConsentOnFile, which StaffMember does not carry. The flag is
+        // still stored on the row (see ActivityParticipant) but nothing enforces it.
+
+        ActivityParticipant link;
+
+        if (existingLink is not null)
+        {
+            existingLink.RoleInActivity = request.RoleInActivity;
+            existingLink.AttendanceStatus = request.AttendanceStatus;
+            existingLink.ConsentRequired = request.ConsentRequired;
+            existingLink.EvidenceLink = request.EvidenceLink;
+            existingLink.Remarks = request.Remarks;
+            existingLink.IsActive = true;
+            link = existingLink;
+        }
+        else
+        {
+            link = new ActivityParticipant
+            {
+                ActivityId = activityId,
+                StaffMemberId = request.StaffMemberId,
+                RoleInActivity = request.RoleInActivity,
+                AttendanceStatus = request.AttendanceStatus,
+                ConsentRequired = request.ConsentRequired,
+                EvidenceLink = request.EvidenceLink,
+                Remarks = request.Remarks
+            };
+            db.ActivityParticipants.Add(link);
+        }
+
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new AddActivityParticipantResponse(
-            link.Id, link.ActivityId, link.ParticipantId, participant.FullName, link.RoleInActivity, link.AttendanceStatus));
+            link.Id, link.ActivityId, link.StaffMemberId, staffMember.FullName, link.RoleInActivity, link.AttendanceStatus));
     }
 }

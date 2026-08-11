@@ -13,7 +13,6 @@ public class ParticipantConfiguration : IEntityTypeConfiguration<Participant>
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.FullName).IsRequired().HasMaxLength(200);
-        builder.Property(p => p.ParticipantType).IsRequired().HasMaxLength(50);
         builder.Property(p => p.BeneficiaryType).IsRequired().HasMaxLength(50).HasDefaultValue("INDIVIDUAL");
 
         builder.Property(p => p.Gender).HasConversion<string>().HasMaxLength(20).IsRequired();
@@ -33,5 +32,13 @@ public class ParticipantConfiguration : IEntityTypeConfiguration<Participant>
         builder.Property(p => p.Remarks).HasMaxLength(1000);
 
         builder.Property(p => p.IsActive).HasDefaultValue(true);
+
+        // GetParticipants filters on (ParticipantType, BeneficiaryType, Status) and orders by
+        // FullName — this table had zero indexes before this refactor.
+
+        // GetParticipants filters on (ParticipantType, BeneficiaryType, Status) and orders by
+        // FullName — this table had zero indexes before this refactor.
+        builder.HasIndex(p => new { p.ParticipantType, p.Status });
+        builder.HasIndex(p => p.FullName);
     }
 }

@@ -528,4 +528,243 @@ Content-Type: application/json
   "rejectionReason": "Household income exceeds asnaf threshold."
 }
 
+### --- Governance module (Sprint 5) ---
+### Sourced from the org's real "Enhanced System v7.2" workbook. Board/Executive rosters are NOT
+### separate entities — they are derived from Assignments; see GET .../bodies/{id}/members below.
+
+### Create org body (top of the hierarchy — General Assembly)
+POST {{philcare.Api_HostAddress}}/api/governance/bodies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "General Assembly",
+  "bodyType": "MEMBERSHIP_SUPREME_BODY",
+  "quorumRule": "30% annual; 40% emergency",
+  "decisionThreshold": "50% + 1 ordinary; 2/3 strategic decisions",
+  "meetingFrequency": "Annual + emergency",
+  "policyBasis": "GA Manual 2025"
+}
+
+### Create child org body (Board of Trustees, reporting to the General Assembly — replace parentBodyId)
+POST {{philcare.Api_HostAddress}}/api/governance/bodies
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Board of Trustees",
+  "bodyType": "GOVERNANCE",
+  "parentBodyId": 1,
+  "quorumRule": "50% + 1",
+  "decisionThreshold": "Simple majority; 75% for strategic decisions",
+  "meetingFrequency": "Monthly / Quarterly / As needed",
+  "policyBasis": "Governance Manual 2025"
+}
+
+### Rejected: a body cannot be made its own ancestor (uncomment and adjust ids to try)
+# PUT {{philcare.Api_HostAddress}}/api/governance/bodies/1
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# { "name": "General Assembly", "bodyType": "MEMBERSHIP_SUPREME_BODY", "parentBodyId": 2, "isActive": true }
+# --> 400 Governance.CircularBodyHierarchy (body 2's parent is body 1)
+
+### List org bodies (filters: bodyType, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/governance/bodies
+Authorization: Bearer {{token}}
+
+### Get org body detail (child bodies + current member count; replace {{bodyId}})
+GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}
+Authorization: Bearer {{token}}
+
+### Get the body's current roster — THIS is "board trustees" / "executive team", derived from Assignments
+GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}/members
+Authorization: Bearer {{token}}
+
+### Same roster including former (ended) assignments
+GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}/members?includeFormer=true
+Authorization: Bearer {{token}}
+
+### Deactivate org body (Admin only; 409 if it has active child bodies or current assignments)
+DELETE {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}
+Authorization: Bearer {{token}}
+
+### Create person
+POST {{philcare.Api_HostAddress}}/api/governance/people
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "fullName": "Jamal Perosalim Tanduc",
+  "personCategory": "BOARD",
+  "email": "jamaltanduc@example.local",
+  "defaultVotingRights": true
+}
+
+### List people (filters: personCategory, status, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/governance/people
+Authorization: Bearer {{token}}
+
+### Get person detail (replace {{personId}})
+GET {{philcare.Api_HostAddress}}/api/governance/people/{{personId}}
+Authorization: Bearer {{token}}
+
+### Deactivate person (Admin only)
+DELETE {{philcare.Api_HostAddress}}/api/governance/people/{{personId}}
+Authorization: Bearer {{token}}
+
+### Create governance role
+POST {{philcare.Api_HostAddress}}/api/governance/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Chairperson",
+  "roleCategory": "BOARD",
+  "defaultVotingRights": "Yes",
+  "countsForQuorum": "Yes",
+  "delegable": "No"
+}
+
+### List governance roles (filter: roleCategory, includeInactive)
+GET {{philcare.Api_HostAddress}}/api/governance/roles
+Authorization: Bearer {{token}}
+
+### Create assignment (person holds a role in a body — replace ids)
+POST {{philcare.Api_HostAddress}}/api/governance/assignments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "personId": 1,
+  "orgBodyId": 2,
+  "governanceRoleId": 1,
+  "positionTitle": "Chairperson",
+  "startDate": "2022-10-30T00:00:00Z",
+  "isPrimary": true,
+  "votingRights": true,
+  "isTemporary": false
+}
+
+### Rejected: a person cannot hold two primary Current assignments at once (uncomment to try)
+# POST {{philcare.Api_HostAddress}}/api/governance/assignments
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# { "personId": 1, "orgBodyId": 3, "governanceRoleId": 1, "startDate": "2026-01-01T00:00:00Z", "isPrimary": true, "votingRights": true, "isTemporary": false }
+# --> 409 Governance.DuplicatePrimaryAssignment
+
+### List assignments (filters: personId, bodyId, roleId, status)
+GET {{philcare.Api_HostAddress}}/api/governance/assignments
+Authorization: Bearer {{token}}
+
+### End an assignment (Admin only; endDate optional, defaults to today)
+POST {{philcare.Api_HostAddress}}/api/governance/assignments/{{assignmentId}}/end
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{}
+
+### Create meeting (quorumRequired/decisionThreshold are snapshot-copied from the body automatically)
+POST {{philcare.Api_HostAddress}}/api/governance/meetings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "orgBodyId": 2,
+  "meetingType": "BOARD_STRATEGIC",
+  "meetingDate": "2026-03-25T00:00:00Z",
+  "mode": "IN_PERSON",
+  "calledBy": "Board Chairperson",
+  "chairPersonId": 1
+}
+
+### List meetings (filters: bodyId, meetingType, status, from, to)
+GET {{philcare.Api_HostAddress}}/api/governance/meetings
+Authorization: Bearer {{token}}
+
+### Get meeting detail (replace {{meetingId}})
+GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}
+Authorization: Bearer {{token}}
+
+### Mark a meeting Held (required before minutes can be recorded)
+PUT {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "meetingType": "BOARD_STRATEGIC",
+  "meetingDate": "2026-03-25T00:00:00Z",
+  "mode": "IN_PERSON",
+  "status": "Held"
+}
+
+### Add a meeting participant
+POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/participants
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "personId": 1,
+  "attendanceStatus": "PRESENT",
+  "votingRight": true,
+  "countsForQuorum": true
+}
+
+### Get meeting roster
+GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/participants
+Authorization: Bearer {{token}}
+
+### Get quorum count — reports numbers alongside the snapshotted policy rule, does not evaluate it
+GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/quorum
+Authorization: Bearer {{token}}
+
+### Create minutes (meeting must be Held; one set of minutes per meeting)
+POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "preparedByPersonId": 2,
+  "approvedByPersonId": 1,
+  "summary": "The 2026-2028 Strategic Plan approved."
+}
+
+### Rejected: minutes on a meeting that hasn't been held yet (uncomment to try against a Scheduled meeting)
+# POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# {}
+# --> 400 Governance.MeetingNotHeld
+
+### Add a decision to the minutes (replace {{minutesId}})
+POST {{philcare.Api_HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "decisionText": "Approve the 2026-2028 Strategic Plan.",
+  "actionPoints": "Submit to Maktab Tanfizi.",
+  "decisionStatus": "OPEN"
+}
+
+### List decisions for a minutes record
+GET {{philcare.Api_HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
+Authorization: Bearer {{token}}
+
+### Publish minutes (locks minutes AND its decisions from further edits)
+PUT {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "summary": "The 2026-2028 Strategic Plan approved.",
+  "publicationStatus": "Published"
+}
+
+### Governance summary report (filters: from, to — date range on meetings held)
+GET {{philcare.Api_HostAddress}}/api/reports/governance-summary
+Authorization: Bearer {{token}}
+
 ###

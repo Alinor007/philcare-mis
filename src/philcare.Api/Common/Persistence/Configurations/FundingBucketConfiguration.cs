@@ -28,6 +28,8 @@ public class FundingBucketConfiguration : IEntityTypeConfiguration<FundingBucket
         builder.Property(b => b.PolicyRule).HasMaxLength(1000);
         builder.Property(b => b.TypicalUse).HasMaxLength(500);
 
+        builder.Property(b => b.ConcurrencyStamp).HasDefaultValue(0);
+
         builder.Ignore(b => b.Remaining);
 
         builder.HasIndex(b => b.Code).IsUnique();

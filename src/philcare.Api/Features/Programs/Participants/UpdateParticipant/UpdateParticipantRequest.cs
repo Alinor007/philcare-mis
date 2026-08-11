@@ -22,4 +22,5 @@ public sealed record UpdateParticipantRequest(
     bool IsActive);
 
 public sealed record UpdateParticipantResponse(
-    int Id, string FullName, string ParticipantType, string BeneficiaryType, Gender Gender, string Status, bool IsActive);
+    int Id, string FullName, string ParticipantType, string BeneficiaryType, Gender Gender, string Status, bool IsActive,
+    bool SafeguardingWarning, string? SafeguardingMessage);

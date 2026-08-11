@@ -51,6 +51,6 @@ public sealed class GetParticipantsEndpoint : IEndpoint
         })
         .WithName("GetParticipants")
         .WithTags("Participants")
-        .RequireAuthorization();
+        .RequireAuthorization("Casework");
     }
 }

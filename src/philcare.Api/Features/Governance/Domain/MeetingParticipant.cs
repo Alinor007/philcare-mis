@@ -19,6 +19,6 @@ public class MeetingParticipant : Entity
     public string AttendanceStatus { get; set; } = string.Empty; // lookup: attendance_status
     public bool VotingRight { get; set; }
     public bool CountsForQuorum { get; set; }
-    public string? ParticipationMode { get; set; } // lookup: meeting_mode
+    public string? ParticipationMode { get; set; } // lookup: participation_mode
     public string? Remarks { get; set; }
 }

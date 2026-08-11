@@ -24,7 +24,9 @@ public sealed class UpdateProjectHandler(AppDbContext db)
         project.EndDate = request.EndDate;
         project.Location = request.Location;
         project.ProjectManager = request.ProjectManager;
-        project.ImplementationStatus = request.ImplementationStatus;
+        // ImplementationStatus is intentionally not settable here — status changes go through
+        // POST /api/projects/{id}/status, which enforces the transition table and the
+        // Projects.HasOpenActivities closeout guard.
         project.ApprovalLevel = request.ApprovalLevel;
         project.Notes = request.Notes;
         project.IsActive = request.IsActive;

@@ -8,11 +8,11 @@ public sealed class RemoveActivityParticipantEndpoint : IEndpoint
 {
     public void Map(IEndpointRouteBuilder app)
     {
-        app.MapDelete("/api/activities/{activityId:int}/participants/{participantId:int}", async (
-            int activityId, int participantId, AppDbContext db, CancellationToken ct) =>
+        app.MapDelete("/api/activities/{activityId:int}/participants/{staffMemberId:int}", async (
+            int activityId, int staffMemberId, AppDbContext db, CancellationToken ct) =>
         {
             var link = await db.ActivityParticipants
-                .FirstOrDefaultAsync(ap => ap.ActivityId == activityId && ap.ParticipantId == participantId, ct);
+                .FirstOrDefaultAsync(ap => ap.ActivityId == activityId && ap.StaffMemberId == staffMemberId && ap.IsActive, ct);
 
             if (link is null)
             {
@@ -20,7 +20,9 @@ public sealed class RemoveActivityParticipantEndpoint : IEndpoint
                     title: "ActivityParticipants.NotFound", detail: "This participant is not enrolled in this activity.", statusCode: StatusCodes.Status404NotFound);
             }
 
-            db.ActivityParticipants.Remove(link);
+            // Soft delete — preserves the attendance/audit history. Re-enrolling reactivates this
+            // same row (see AddActivityParticipantHandler); the unique index forbids a second insert.
+            link.IsActive = false;
             await db.SaveChangesAsync(ct);
 
             return Results.NoContent();

@@ -6,6 +6,13 @@ namespace philcare.Api.Common.Persistence;
 
 public sealed class AuditInterceptor(IHttpContextAccessor httpContextAccessor) : SaveChangesInterceptor
 {
+    /// <summary>
+    /// Sentinel written to CreatedBy/UpdatedBy when there is no HTTP user — i.e. boot-time
+    /// seeding. DbSeeder.SeedLookupsAsync uses this to distinguish seed-owned rows (safe to
+    /// relabel on the next boot) from admin-edited ones (must never be overwritten).
+    /// </summary>
+    public const string SystemUser = "system";
+
     public override InterceptionResult<int> SavingChanges(DbContextEventData eventData, InterceptionResult<int> result)
     {
         UpdateAuditFields(eventData.Context);
@@ -25,7 +32,7 @@ public sealed class AuditInterceptor(IHttpContextAccessor httpContextAccessor) :
     {
         if (context is null) return;
 
-        var currentUser = httpContextAccessor.HttpContext?.User?.Identity?.Name ?? "system";
+        var currentUser = httpContextAccessor.HttpContext?.User?.Identity?.Name ?? SystemUser;
         var now = DateTime.UtcNow;
 
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())

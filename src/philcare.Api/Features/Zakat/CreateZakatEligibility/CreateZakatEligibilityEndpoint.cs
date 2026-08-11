@@ -16,6 +16,6 @@ public sealed class CreateZakatEligibilityEndpoint : IEndpoint
         .WithName("CreateZakatEligibility")
         .WithTags("ZakatEligibility")
         .AddEndpointFilter<ValidationFilter<CreateZakatEligibilityRequest>>()
-        .RequireAuthorization("Program");
+        .RequireAuthorization("Casework");
     }
 }

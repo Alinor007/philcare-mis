@@ -12,7 +12,6 @@ public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectRequ
         RuleFor(x => x.TargetBeneficiaries).GreaterThan(0).When(x => x.TargetBeneficiaries is not null);
         RuleFor(x => x.Location).MaximumLength(200);
         RuleFor(x => x.ProjectManager).MaximumLength(200);
-        RuleFor(x => x.ImplementationStatus).NotEmpty().MaximumLength(50);
         RuleFor(x => x.ApprovalLevel).MaximumLength(100);
         RuleFor(x => x.Notes).MaximumLength(1000);
     }

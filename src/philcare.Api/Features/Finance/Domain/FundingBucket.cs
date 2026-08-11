@@ -36,6 +36,13 @@ public class FundingBucket : Entity
 
     public decimal Remaining => AllocatedAmount - ExpensedAmount;
 
+    // Reserved for a future concurrency-hardening pass on the balance check in ExpensePosting.Post
+    // (the read-modify-write on AllocatedAmount/ExpensedAmount has no race protection today — a
+    // pre-existing gap, not introduced by this refactor). Added now because the column is free
+    // while this migration is already altering Finance tables; not yet wired as an EF concurrency
+    // token or incremented anywhere, so it changes no behavior by itself.
+    public int ConcurrencyStamp { get; set; }
+
     public List<Allocation> Allocations { get; set; } = [];
     public List<Expense> Expenses { get; set; } = [];
 }

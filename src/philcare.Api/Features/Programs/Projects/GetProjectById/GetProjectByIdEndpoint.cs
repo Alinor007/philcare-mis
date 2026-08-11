@@ -21,7 +21,10 @@ public sealed record ProjectDetailResponse(
     string? ApprovalLevel,
     string? Notes,
     bool IsActive,
-    int ActivityCount);
+    int ActivityCount,
+    // Set only by ChangeProjectStatus on the transition to COMPLETED — the UI reads it to show
+    // when a project was closed, and to distinguish "closed" from merely "not ongoing".
+    DateTime? ClosedAt);
 
 public sealed class GetProjectByIdEndpoint : IEndpoint
 {
@@ -34,7 +37,7 @@ public sealed class GetProjectByIdEndpoint : IEndpoint
                 .Select(p => new ProjectDetailResponse(
                     p.Id, p.ProgramId, p.Program.Name, p.Name, p.DonorId, p.FundCode, p.TotalBudget, p.TargetBeneficiaries,
                     p.StartDate, p.EndDate, p.Location, p.ProjectManager, p.ImplementationStatus, p.ApprovalLevel, p.Notes,
-                    p.IsActive, p.Activities.Count))
+                    p.IsActive, p.Activities.Count, p.ClosedAt))
                 .FirstOrDefaultAsync(ct);
 
             if (project is null)

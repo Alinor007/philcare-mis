@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using philcare.Api.Features.Volunteers.Domain;
+using philcare.Api.Features.HumanResources.Domain;
 
 namespace philcare.Api.Common.Persistence.Configurations;
 

@@ -15,6 +15,6 @@ public sealed class UpdateDonorEngagementEndpoint : IEndpoint
         .WithName("UpdateDonorEngagement")
         .WithTags("DonorEngagements")
         .AddEndpointFilter<ValidationFilter<UpdateDonorEngagementRequest>>()
-        .RequireAuthorization("Finance");
+        .RequireAuthorization("Income");
     }
 }

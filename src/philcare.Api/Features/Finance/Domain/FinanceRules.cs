@@ -8,4 +8,8 @@ public static class FinanceRules
     public const string ZakatFundCode = "ZAKA-FUND";
     public const string ZakatProgramBucket = "ZAK-PROG";
     public const string ZakatAmilBucket = "ZAK-AMIL";
+
+    // Expense category used for the Expense that CreateDistributionHandler posts alongside a
+    // Distribution — a real expense_category lookup code (see lookup-seed.json).
+    public const string DistributionExpenseCategory = "DISTRIBUTION";
 }

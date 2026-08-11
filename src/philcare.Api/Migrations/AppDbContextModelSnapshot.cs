@@ -688,6 +688,11 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("ConcurrencyStamp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1519,6 +1524,12 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<int?>("ActualBeneficiaries")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ActualEndDate")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Barangay")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
@@ -1643,6 +1654,11 @@ namespace philcare.Api.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
                     b.Property<int>("ParticipantId")
                         .HasColumnType("int");
 
@@ -1734,6 +1750,11 @@ namespace philcare.Api.Migrations
                     b.Property<int?>("ActivityId")
                         .HasColumnType("int");
 
+                    b.Property<int>("BeneficiaryCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1747,6 +1768,9 @@ namespace philcare.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<int?>("ExpenseId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("FieldVerified")
                         .HasColumnType("tinyint(1)");
@@ -1785,6 +1809,12 @@ namespace philcare.Api.Migrations
                         .HasPrecision(14, 2)
                         .HasColumnType("decimal(14,2)");
 
+                    b.Property<decimal>("UnitValuePhp")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(14, 2)
+                        .HasColumnType("decimal(14,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -1798,6 +1828,10 @@ namespace philcare.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ActivityId");
+
+                    b.HasIndex("DistributionDate");
+
+                    b.HasIndex("ExpenseId");
 
                     b.HasIndex("FundingBucketCode");
 
@@ -1903,6 +1937,10 @@ namespace philcare.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FullName");
+
+                    b.HasIndex("ParticipantType", "Status");
+
                     b.ToTable("Participants", (string)null);
                 });
 
@@ -1917,6 +1955,9 @@ namespace philcare.Api.Migrations
                     b.Property<string>("ApprovalLevel")
                         .HasMaxLength(100)
                         .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("ClosedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -2662,6 +2703,11 @@ namespace philcare.Api.Migrations
                         .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("philcare.Api.Features.Finance.Domain.Expense", "Expense")
+                        .WithMany()
+                        .HasForeignKey("ExpenseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("philcare.Api.Features.Programs.Domain.Participant", "Participant")
                         .WithMany("Distributions")
                         .HasForeignKey("ParticipantId")
@@ -2669,6 +2715,8 @@ namespace philcare.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Activity");
+
+                    b.Navigation("Expense");
 
                     b.Navigation("Participant");
                 });

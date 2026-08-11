@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using philcare.Api.Features.Volunteers.Domain;
+using philcare.Api.Features.HumanResources.Domain;
 
 namespace philcare.Api.Common.Persistence.Configurations;
 
@@ -28,6 +28,7 @@ public class VolunteerConfiguration : IEntityTypeConfiguration<Volunteer>
         builder.Property(v => v.Region).HasMaxLength(50);
 
         builder.Property(v => v.Skills).HasMaxLength(500);
+        builder.Property(v => v.AvailabilityDays).HasMaxLength(200);
         builder.Property(v => v.Status).IsRequired().HasMaxLength(50);
 
         builder.Property(v => v.Notes).HasMaxLength(1000);

@@ -1,6 +1,6 @@
 using philcare.Api.Common.Domain;
 using philcare.Api.Features.Partners.Domain;
-using philcare.Api.Features.Volunteers.Domain;
+using philcare.Api.Features.HumanResources.Domain;
 
 namespace philcare.Api.Features.Programs.Domain;
 
@@ -39,6 +39,11 @@ public class Activity : Entity
     public string? EvidenceLink { get; set; }
     public string? Notes { get; set; }
     public bool IsActive { get; set; } = true;
+
+    // Set when ImplementationStatus transitions to COMPLETED via ChangeActivityStatus — the
+    // actual reach and finish date reported at closeout. Null until then; never set any other way.
+    public int? ActualBeneficiaries { get; set; }
+    public DateTime? ActualEndDate { get; set; }
 
     public List<ActivityParticipant> ActivityParticipants { get; set; } = [];
     public List<Distribution> Distributions { get; set; } = [];

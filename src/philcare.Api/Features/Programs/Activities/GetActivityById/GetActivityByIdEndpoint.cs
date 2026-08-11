@@ -29,8 +29,13 @@ public sealed record ActivityDetailResponse(
     string? EvidenceLink,
     string? Notes,
     bool IsActive,
+    // Staffing-roster size — ActivityParticipant links Activity to StaffMember, not beneficiaries.
     int ParticipantCount,
-    int DistributionCount);
+    int DistributionCount,
+    // Captured only by ChangeActivityStatus on the transition to COMPLETED — the closeout reach
+    // and finish date. Null while the activity is still open.
+    int? ActualBeneficiaries,
+    DateTime? ActualEndDate);
 
 public sealed class GetActivityByIdEndpoint : IEndpoint
 {
@@ -45,7 +50,10 @@ public sealed class GetActivityByIdEndpoint : IEndpoint
                     a.Barangay, a.City, a.Province, a.Region, a.StartDate, a.EndDate, a.Budget, a.ImplementingPartner,
                     a.ImplementingPartnerId, a.ImplementingPartnerRef == null ? null : a.ImplementingPartnerRef.Name,
                     a.ResponsibleDepartment, a.SdgAlignment, a.ImplementationStatus, a.SafeguardingRisk, a.EvidenceLink,
-                    a.Notes, a.IsActive, a.ActivityParticipants.Count, a.Distributions.Count))
+                    // Roster removal became a soft delete in Sprint 6, so this count has to filter on
+                    // IsActive or it disagrees with the roster GET, which hides inactive rows by default.
+                    a.Notes, a.IsActive, a.ActivityParticipants.Count(ap => ap.IsActive), a.Distributions.Count,
+                    a.ActualBeneficiaries, a.ActualEndDate))
                 .FirstOrDefaultAsync(ct);
 
             if (activity is null)

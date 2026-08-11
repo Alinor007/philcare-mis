@@ -16,7 +16,6 @@ public sealed record UpdateActivityRequest(
     int? ImplementingPartnerId,
     string? ResponsibleDepartment,
     string? SdgAlignment,
-    string ImplementationStatus,
     string? SafeguardingRisk,
     string? EvidenceLink,
     string? Notes,

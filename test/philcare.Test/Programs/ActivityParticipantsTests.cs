@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.HumanResources.Staff.CreateStaffMember;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Test.Common;
 using Xunit;
@@ -67,33 +67,31 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
         return activity!.Id;
     }
 
-    private async Task<int> CreateParticipantAsync()
+    private async Task<int> CreateStaffMemberAsync()
     {
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/staff", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "ATTENDEE",
-            BeneficiaryType = "INDIVIDUAL",
-            Gender = "Unspecified",
-            ConsentOnFile = false
+            FullName = $"Staff-{Guid.NewGuid():N}",
+            Position = "Field Officer",
+            EmploymentType = "FULL_TIME"
         });
         response.EnsureSuccessStatusCode();
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
-        return participant!.Id;
+        var staffMember = await response.Content.ReadFromJsonAsync<CreateStaffMemberResponse>(JsonOptions);
+        return staffMember!.Id;
     }
 
     [Fact]
-    public async Task Enroll_ThenListRoster_ShowsParticipant()
+    public async Task Assign_ThenListRoster_ShowsStaffMember()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
 
         var enrollResponse = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
         {
-            ParticipantId = participantId,
+            StaffMemberId = staffMemberId,
             RoleInActivity = "Attendee",
-            AttendanceStatus = "Present",
+            AttendanceStatus = "PRESENT",
             ConsentRequired = false
         });
         Assert.Equal(HttpStatusCode.Created, enrollResponse.StatusCode);
@@ -103,26 +101,26 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
         var roster = await rosterResponse.Content.ReadFromJsonAsync<List<RosterRowDto>>(JsonOptions);
 
         Assert.Single(roster!);
-        Assert.Equal(participantId, roster![0].ParticipantId);
+        Assert.Equal(staffMemberId, roster![0].StaffMemberId);
     }
 
     [Fact]
-    public async Task Enroll_SameParticipantTwice_ReturnsConflict()
+    public async Task Assign_SameStaffMemberTwice_ReturnsConflict()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
 
         var first = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
         {
-            ParticipantId = participantId,
+            StaffMemberId = staffMemberId,
             ConsentRequired = false
         });
         first.EnsureSuccessStatusCode();
 
         var second = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
         {
-            ParticipantId = participantId,
+            StaffMemberId = staffMemberId,
             ConsentRequired = false
         });
 
@@ -130,14 +128,14 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task Enroll_UnknownParticipant_ReturnsNotFound()
+    public async Task Assign_UnknownStaffMember_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
 
         var response = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
         {
-            ParticipantId = 999999,
+            StaffMemberId = 999999,
             ConsentRequired = false
         });
 
@@ -145,20 +143,20 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task Remove_EnrolledParticipant_RemovesFromRoster()
+    public async Task Remove_AssignedStaffMember_RemovesFromRoster()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
 
         var enrollResponse = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
         {
-            ParticipantId = participantId,
+            StaffMemberId = staffMemberId,
             ConsentRequired = false
         });
         enrollResponse.EnsureSuccessStatusCode();
 
-        var removeResponse = await _client.DeleteAsync($"/api/activities/{activityId}/participants/{participantId}");
+        var removeResponse = await _client.DeleteAsync($"/api/activities/{activityId}/participants/{staffMemberId}");
         Assert.Equal(HttpStatusCode.NoContent, removeResponse.StatusCode);
 
         var rosterResponse = await _client.GetAsync($"/api/activities/{activityId}/participants");
@@ -169,18 +167,98 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task Remove_NotEnrolled_ReturnsNotFound()
+    public async Task Assign_AfterPriorRemoval_ReactivatesRoster()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
 
-        var response = await _client.DeleteAsync($"/api/activities/{activityId}/participants/{participantId}");
+        var firstEnroll = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
+        {
+            StaffMemberId = staffMemberId,
+            ConsentRequired = false
+        });
+        firstEnroll.EnsureSuccessStatusCode();
+
+        var removeResponse = await _client.DeleteAsync($"/api/activities/{activityId}/participants/{staffMemberId}");
+        Assert.Equal(HttpStatusCode.NoContent, removeResponse.StatusCode);
+
+        var reEnroll = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
+        {
+            StaffMemberId = staffMemberId,
+            RoleInActivity = "Re-enrolled",
+            ConsentRequired = false
+        });
+
+        Assert.Equal(HttpStatusCode.Created, reEnroll.StatusCode);
+
+        var rosterResponse = await _client.GetAsync($"/api/activities/{activityId}/participants");
+        rosterResponse.EnsureSuccessStatusCode();
+        var roster = await rosterResponse.Content.ReadFromJsonAsync<List<RosterRowDto>>(JsonOptions);
+
+        Assert.Single(roster!);
+        Assert.Equal("Re-enrolled", roster![0].RoleInActivity);
+    }
+
+    [Fact]
+    public async Task Assign_InvalidAttendanceStatus_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var activityId = await CreateActivityAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
+
+        var response = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
+        {
+            StaffMemberId = staffMemberId,
+            AttendanceStatus = "NOT_A_REAL_STATUS",
+            ConsentRequired = false
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task UpdateActivityParticipant_ChangesAttendanceStatus()
+    {
+        await AuthenticateAsAdminAsync();
+        var activityId = await CreateActivityAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
+
+        var enrollResponse = await _client.PostAsJsonAsync($"/api/activities/{activityId}/participants", new
+        {
+            StaffMemberId = staffMemberId,
+            ConsentRequired = false
+        });
+        enrollResponse.EnsureSuccessStatusCode();
+
+        var updateResponse = await _client.PutAsJsonAsync($"/api/activities/{activityId}/participants/{staffMemberId}", new
+        {
+            AttendanceStatus = "LATE",
+            ConsentRequired = false
+        });
+
+        Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
+
+        var rosterResponse = await _client.GetAsync($"/api/activities/{activityId}/participants");
+        rosterResponse.EnsureSuccessStatusCode();
+        var roster = await rosterResponse.Content.ReadFromJsonAsync<List<RosterRowDto>>(JsonOptions);
+
+        Assert.Equal("LATE", roster!.Single().AttendanceStatus);
+    }
+
+    [Fact]
+    public async Task Remove_NotAssigned_ReturnsNotFound()
+    {
+        await AuthenticateAsAdminAsync();
+        var activityId = await CreateActivityAsync();
+        var staffMemberId = await CreateStaffMemberAsync();
+
+        var response = await _client.DeleteAsync($"/api/activities/{activityId}/participants/{staffMemberId}");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
-    private sealed record RosterRowDto(int ParticipantId, string ParticipantName, string ParticipantType, string? RoleInActivity, string? AttendanceStatus);
+    private sealed record RosterRowDto(int StaffMemberId, string StaffMemberName, string Position, string? RoleInActivity, string? AttendanceStatus);
 }

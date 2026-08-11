@@ -15,6 +15,6 @@ public sealed class CreateDonationEndpoint : IEndpoint
         .WithName("CreateDonation")
         .WithTags("Donations")
         .AddEndpointFilter<ValidationFilter<CreateDonationRequest>>()
-        .RequireAuthorization("Finance");
+        .RequireAuthorization("Income");
     }
 }

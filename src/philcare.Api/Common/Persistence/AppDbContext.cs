@@ -6,7 +6,7 @@ using philcare.Api.Features.Partners.Domain;
 using philcare.Api.Features.Programs.Domain;
 using philcare.Api.Features.ReferenceData.Domain;
 using philcare.Api.Features.Sponsorships.Domain;
-using philcare.Api.Features.Volunteers.Domain;
+using philcare.Api.Features.HumanResources.Domain;
 using philcare.Api.Features.Zakat.Domain;
 
 namespace philcare.Api.Common.Persistence;
@@ -33,10 +33,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Activity> Activities => Set<Activity>();
     public DbSet<Participant> Participants => Set<Participant>();
+    public DbSet<Beneficiary> Beneficiaries => Set<Beneficiary>();
     public DbSet<ActivityParticipant> ActivityParticipants => Set<ActivityParticipant>();
     public DbSet<Distribution> Distributions => Set<Distribution>();
 
     // Partners, Volunteers, Sponsorship, Zakat Eligibility — Sprint 4
+    // (Volunteer/ActivityVolunteer moved into the HumanResources module in Sprint 7; the DbSet
+    // names and table names are unchanged, so no schema or API change came with that move.)
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<Volunteer> Volunteers => Set<Volunteer>();
     public DbSet<ActivityVolunteer> ActivityVolunteers => Set<ActivityVolunteer>();
@@ -52,6 +55,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<MeetingParticipant> MeetingParticipants => Set<MeetingParticipant>();
     public DbSet<MeetingMinutes> MeetingMinutes => Set<MeetingMinutes>();
     public DbSet<MeetingDecision> MeetingDecisions => Set<MeetingDecision>();
+
+    // Human Resources — Sprint 7
+    public DbSet<StaffMember> StaffMembers => Set<StaffMember>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

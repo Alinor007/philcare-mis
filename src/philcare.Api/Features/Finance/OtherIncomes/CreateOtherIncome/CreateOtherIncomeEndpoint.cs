@@ -15,6 +15,6 @@ public sealed class CreateOtherIncomeEndpoint : IEndpoint
         .WithName("CreateOtherIncome")
         .WithTags("OtherIncome")
         .AddEndpointFilter<ValidationFilter<CreateOtherIncomeRequest>>()
-        .RequireAuthorization("Finance");
+        .RequireAuthorization("Income");
     }
 }

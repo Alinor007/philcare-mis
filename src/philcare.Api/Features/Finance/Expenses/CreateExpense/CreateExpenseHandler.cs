@@ -16,63 +16,20 @@ public sealed class CreateExpenseHandler(AppDbContext db)
             return Result.Failure<CreateExpenseResponse>(Error.NotFound("Expenses.FundingBucketNotFound", "Funding bucket not found."));
         }
 
-        var amountPhp = Math.Round(request.AmountOriginal * request.FxRateToPhp, 2);
+        var posting = ExpensePosting.Post(bucket, new ExpensePostingRequest(
+            request.ExpenseDate, request.PayeeVendor, request.ExpenseCategory, request.Description, request.PaymentMethod,
+            request.AmountOriginal, request.Currency, request.FxRateToPhp, request.ProgramOrProject, request.ReceiptNo,
+            request.ApprovedBy, request.SupportingDocStatus, request.LinkedDonationId, request.ExpenseFunction,
+            request.ZakatAsnaf, request.BeneficiaryCount, request.BeneficiaryType, request.Notes));
 
-        if (bucket.Remaining < amountPhp)
+        if (posting.IsFailure)
         {
-            return Result.Failure<CreateExpenseResponse>(
-                Error.Validation("Expenses.InsufficientBalance", "The funding bucket does not have enough balance to cover this expense."));
+            return Result.Failure<CreateExpenseResponse>(posting.Error);
         }
 
-        var isZakatProgramBucket = string.Equals(bucket.FundCode, FinanceRules.ZakatFundCode, StringComparison.OrdinalIgnoreCase)
-            && bucket.BucketType == BucketType.Program;
-
-        if (isZakatProgramBucket)
-        {
-            if (string.IsNullOrWhiteSpace(request.ZakatAsnaf))
-            {
-                return Result.Failure<CreateExpenseResponse>(
-                    Error.Validation("Expenses.ZakatAsnafRequired", "Zakat asnaf is required for expenses against the zakat program bucket."));
-            }
-
-            if (request.BeneficiaryCount is null or 0)
-            {
-                return Result.Failure<CreateExpenseResponse>(
-                    Error.Validation("Expenses.BeneficiaryCountRequired", "Beneficiary count is required for expenses against the zakat program bucket."));
-            }
-        }
-
-        var expense = new Expense
-        {
-            ExpenseDate = request.ExpenseDate,
-            PayeeVendor = request.PayeeVendor,
-            ExpenseCategory = request.ExpenseCategory,
-            Description = request.Description,
-            FundCode = bucket.FundCode,
-            ProgramOrProject = request.ProgramOrProject,
-            PaymentMethod = request.PaymentMethod,
-            AmountOriginal = request.AmountOriginal,
-            Currency = request.Currency,
-            FxRateToPhp = request.FxRateToPhp,
-            AmountPhp = amountPhp,
-            ReceiptNo = request.ReceiptNo,
-            ApprovalStatus = "Approved",
-            ApprovedBy = request.ApprovedBy,
-            SupportingDocStatus = request.SupportingDocStatus,
-            LinkedDonationId = request.LinkedDonationId,
-            ExpenseFunction = request.ExpenseFunction,
-            FundingBucketCode = bucket.Code,
-            ZakatAsnaf = request.ZakatAsnaf,
-            BeneficiaryCount = request.BeneficiaryCount,
-            BeneficiaryType = request.BeneficiaryType,
-            Notes = request.Notes,
-            IsVoided = false
-        };
+        var expense = posting.Value;
 
         db.Expenses.Add(expense);
-
-        bucket.ExpensedAmount += amountPhp;
-
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CreateExpenseResponse(

@@ -24,13 +24,13 @@ public sealed class AddMeetingParticipantHandler(AppDbContext db)
             return Result.Failure<AddMeetingParticipantResponse>(Error.NotFound("Governance.PersonNotFound", "Person not found."));
         }
 
-        var alreadyAParticipant = await db.MeetingParticipants
+        var alreadyABeneficiary = await db.MeetingParticipants
             .AnyAsync(mp => mp.MeetingId == meetingId && mp.PersonId == request.PersonId, cancellationToken);
 
-        if (alreadyAParticipant)
+        if (alreadyABeneficiary)
         {
             return Result.Failure<AddMeetingParticipantResponse>(
-                Error.Conflict("Governance.AlreadyAParticipant", "This person is already a participant in this meeting."));
+                Error.Conflict("Governance.AlreadyABeneficiary", "This person is already a beneficiary in this meeting."));
         }
 
         if (request.AssignmentId is not null)
@@ -45,7 +45,7 @@ public sealed class AddMeetingParticipantHandler(AppDbContext db)
             }
         }
 
-        var participant = new MeetingParticipant
+        var beneficiary = new MeetingParticipant
         {
             MeetingId = meetingId,
             PersonId = request.PersonId,
@@ -58,9 +58,9 @@ public sealed class AddMeetingParticipantHandler(AppDbContext db)
             Remarks = request.Remarks
         };
 
-        db.MeetingParticipants.Add(participant);
+        db.MeetingParticipants.Add(beneficiary);
         await db.SaveChangesAsync(cancellationToken);
 
-        return Result.Success(new AddMeetingParticipantResponse(participant.Id, participant.MeetingId, participant.PersonId, person.FullName, participant.AttendanceStatus));
+        return Result.Success(new AddMeetingParticipantResponse(beneficiary.Id, beneficiary.MeetingId, beneficiary.PersonId, person.FullName, beneficiary.AttendanceStatus));
     }
 }

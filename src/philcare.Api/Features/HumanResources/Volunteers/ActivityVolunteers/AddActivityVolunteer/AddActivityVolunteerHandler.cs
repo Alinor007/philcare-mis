@@ -17,7 +17,9 @@ public sealed class AddActivityVolunteerHandler(AppDbContext db)
             return Result.Failure<AddActivityVolunteerResponse>(Error.NotFound("ActivityVolunteers.ActivityNotFound", "Activity not found."));
         }
 
-        var volunteer = await db.Volunteers.FirstOrDefaultAsync(v => v.Id == request.VolunteerId, cancellationToken);
+        var volunteer = await db.Volunteers
+            .Include(v => v.Person)
+            .FirstOrDefaultAsync(v => v.Id == request.VolunteerId, cancellationToken);
 
         if (volunteer is null)
         {
@@ -67,6 +69,6 @@ public sealed class AddActivityVolunteerHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new AddActivityVolunteerResponse(
-            link.Id, link.ActivityId, link.VolunteerId, volunteer.FullName, link.RoleInActivity, link.AttendanceStatus));
+            link.Id, link.ActivityId, link.VolunteerId, volunteer.Person.FullName, link.RoleInActivity, link.AttendanceStatus));
     }
 }

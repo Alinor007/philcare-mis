@@ -31,7 +31,7 @@ public sealed class UpdateSponsorshipHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateSponsorshipResponse(
-            sponsorship.Id, sponsorship.DonorId, sponsorship.ParticipantId, sponsorship.SponsorshipType,
+            sponsorship.Id, sponsorship.DonorId, sponsorship.BeneficiaryId, sponsorship.SponsorshipType,
             sponsorship.MonthlyAmountPhp, sponsorship.Status.ToString()));
     }
 }

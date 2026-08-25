@@ -1,4 +1,5 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.People.Domain;
 
 namespace philcare.Api.Features.Finance.Domain;
 
@@ -22,7 +23,11 @@ public class Expense : Entity
 
     public string? ReceiptNo { get; set; }
     public string ApprovalStatus { get; set; } = "Pending";
-    public string? ApprovedBy { get; set; }
+
+    // A real Person reference, not free text — matches MeetingMinutes.ApprovedByPersonId. Optional:
+    // an expense can be posted (e.g. via a linked Distribution) without a named approver.
+    public int? ApprovedByPersonId { get; set; }
+    public Person? ApprovedByPerson { get; set; }
     public string? SupportingDocStatus { get; set; }
     public int? LinkedDonationId { get; set; }
 

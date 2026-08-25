@@ -33,6 +33,6 @@ public sealed class UpdateZakatEligibilityHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateZakatEligibilityResponse(
-            eligibility.Id, eligibility.ParticipantId, eligibility.AsnafCategory, eligibility.Status.ToString()));
+            eligibility.Id, eligibility.BeneficiaryId, eligibility.AsnafCategory, eligibility.Status.ToString()));
     }
 }

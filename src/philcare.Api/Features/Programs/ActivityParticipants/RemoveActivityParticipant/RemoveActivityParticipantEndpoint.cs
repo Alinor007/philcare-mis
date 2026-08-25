@@ -17,7 +17,7 @@ public sealed class RemoveActivityParticipantEndpoint : IEndpoint
             if (link is null)
             {
                 return Results.Problem(
-                    title: "ActivityParticipants.NotFound", detail: "This participant is not enrolled in this activity.", statusCode: StatusCodes.Status404NotFound);
+                    title: "ActivityParticipants.NotFound", detail: "This beneficiary is not enrolled in this activity.", statusCode: StatusCodes.Status404NotFound);
             }
 
             // Soft delete — preserves the attendance/audit history. Re-enrolling reactivates this

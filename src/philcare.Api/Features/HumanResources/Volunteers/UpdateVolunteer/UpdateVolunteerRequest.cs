@@ -1,16 +1,7 @@
-using philcare.Api.Features.Programs.Domain;
-
 namespace philcare.Api.Features.HumanResources.Volunteers.UpdateVolunteer;
 
+/// <summary>No PersonId — a volunteer profile stays attached to the Person it was created for.</summary>
 public sealed record UpdateVolunteerRequest(
-    string FullName,
-    Gender Gender,
-    string? Phone,
-    string? Email,
-    string? Barangay,
-    string? City,
-    string? Province,
-    string? Region,
     string? Skills,
     string? AvailabilityDays,
     string Status,
@@ -23,4 +14,4 @@ public sealed record UpdateVolunteerRequest(
     bool IsActive);
 
 public sealed record UpdateVolunteerResponse(
-    int Id, string FullName, Gender Gender, string Status, bool OrientationCompleted, bool IsActive);
+    int Id, int PersonId, string FullName, string Status, bool OrientationCompleted, bool IsActive);

@@ -13,7 +13,7 @@ public sealed record ActivityReportRow(
     string ImplementationStatus,
     int? ActualBeneficiaries,
     DateTime? ActualEndDate,
-    int ParticipantCount,
+    int BeneficiaryCount,
     int PresentCount,
     int DistributionCount,
     decimal TotalDistributedValuePhp);
@@ -21,7 +21,7 @@ public sealed record ActivityReportRow(
 /// <summary>
 /// Workflow Phase 09 "Activity Report — distributions, attendance". One row per activity.
 ///
-/// ParticipantCount/PresentCount describe the **staffing** roster — how many staff were assigned
+/// BeneficiaryCount/PresentCount describe the **staffing** roster — how many staff were assigned
 /// and how many turned up — since ActivityParticipant now links Activity to StaffMember.
 /// Beneficiary reach is DistributionCount / ActualBeneficiaries, not these two.
 ///

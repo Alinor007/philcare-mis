@@ -9,4 +9,4 @@ public sealed record UpdateZakatEligibilityRequest(
     string? AssessmentNotes,
     string? Notes);
 
-public sealed record UpdateZakatEligibilityResponse(int Id, int ParticipantId, string AsnafCategory, string Status);
+public sealed record UpdateZakatEligibilityResponse(int Id, int BeneficiaryId, string AsnafCategory, string Status);

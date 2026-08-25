@@ -1,11 +1,14 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using philcare.Api.Common.Domain;
 using philcare.Api.Common.Persistence;
+using philcare.Api.Features.Finance.Donations.Emails;
 using philcare.Api.Features.Finance.Domain;
+using philcare.Api.Infrastructure.Email;
 
 namespace philcare.Api.Features.Finance.Donations.CreateDonation;
 
-public sealed class CreateDonationHandler(AppDbContext db)
+public sealed class CreateDonationHandler(AppDbContext db, IOptions<EmailOptions> emailOptions)
 {
     public async Task<Result<CreateDonationResponse>> HandleAsync(CreateDonationRequest request, CancellationToken cancellationToken)
     {
@@ -71,7 +74,10 @@ public sealed class CreateDonationHandler(AppDbContext db)
             RestrictedFlag = request.RestrictedFlag,
             ProgramOrProject = request.ProgramOrProject,
             FundCode = fund.Code,
-            ReceiptNo = request.ReceiptNo,
+            // Server-assigned below, before Add() — never client-supplied, same rule already
+            // governing AmountPhp/TotalValuePhp.
+            ReceiptNo = await NextReceiptNoAsync(db, request.DateReceived.Year, cancellationToken),
+            TransactionRef = request.TransactionRef,
             CashDocumentationStatus = request.CashDocumentationStatus,
             SourceVerified = request.SourceVerified,
             KydStatus = donor.KydStatus,
@@ -133,7 +139,53 @@ public sealed class CreateDonationHandler(AppDbContext db)
             adminBucket.AllocatedAmount += adminAmount;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        // Enqueue the confirmation email in the SAME SaveChangesAsync as the donation itself — see
+        // OutboxEmail's doc comment. A donation is never blocked or failed by this: composing the
+        // email cannot throw (all inputs are already-validated strings), and the row's own delivery
+        // is handled asynchronously by OutboxDispatcher, not here.
+        if (string.IsNullOrWhiteSpace(donor.Email))
+        {
+            db.OutboxEmails.Add(new OutboxEmail
+            {
+                Donation = donation,
+                EmailType = EmailType.DonationConfirmation,
+                ToEmail = string.Empty,
+                ToName = donor.Name,
+                Subject = "(skipped — no donor email on file)",
+                HtmlBody = string.Empty,
+                Status = EmailDeliveryStatus.Skipped,
+                LastError = "Donor has no email address on file."
+            });
+        }
+        else
+        {
+            var (subject, html, text) = DonationEmailComposer.ComposeConfirmation(donation, donor, fund, emailOptions.Value);
+            db.OutboxEmails.Add(new OutboxEmail
+            {
+                Donation = donation,
+                EmailType = EmailType.DonationConfirmation,
+                ToEmail = donor.Email,
+                ToName = donor.Name,
+                Subject = subject,
+                HtmlBody = html,
+                TextBody = text,
+                Status = EmailDeliveryStatus.Pending
+            });
+        }
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index on ReceiptNo caught two donations racing for the same number — the
+            // count-based generator above is check-then-act. Rare (would need two donations saved
+            // in the same instant) and not worth an automatic retry given the save already carries
+            // a partially-built Allocation graph; asking the officer to resubmit is simpler and safer.
+            return Result.Failure<CreateDonationResponse>(
+                Error.Conflict("Donations.ReceiptNumberConflict", "Receipt number assignment conflicted with another donation saved at the same time. Please try again."));
+        }
 
         var allocationLines = donation.Allocations
             .Select(a => new AllocationLineResponse(a.AllocationType, a.TargetBucketCode, a.AllocationRate, a.AllocatedAmountPhp))
@@ -142,8 +194,23 @@ public sealed class CreateDonationHandler(AppDbContext db)
         return Result.Success(new CreateDonationResponse(
             donation.Id, donation.DonorId, donation.AmountOriginal, donation.Currency, donation.FxRateToPhp, donation.AmountPhp,
             donation.DateReceived, donation.Channel, donation.Purpose, donation.RestrictedFlag, donation.ProgramOrProject,
-            donation.FundCode, donation.ReceiptNo, donation.AdminAllowed, donation.AdminRateInput, donation.AdminRateCap,
+            donation.FundCode, donation.ReceiptNo, donation.TransactionRef, donation.AdminAllowed, donation.AdminRateInput, donation.AdminRateCap,
             donation.AdminRateApplied, donation.ProgramAllocationPhp, donation.AdminAllocationPhp, donation.ProgramBucketCode,
             donation.AdminBucketCode, donation.AllocationStatus, donation.IsVoided, allocationLines));
+    }
+
+    /// <summary>
+    /// "DON-2026-0001" style, resetting per calendar year. Not a DB sequence — MariaDB
+    /// auto-increment can't reset yearly or carry a prefix — so this counts existing receipts for
+    /// the year instead. That makes it check-then-act; see the DbUpdateException handling above for
+    /// how a collision is surfaced.
+    /// </summary>
+    private static async Task<string> NextReceiptNoAsync(AppDbContext db, int year, CancellationToken cancellationToken)
+    {
+        var yearPrefix = $"DON-{year}-";
+        var count = await db.Donations
+            .Where(d => d.ReceiptNo != null && d.ReceiptNo.StartsWith(yearPrefix))
+            .CountAsync(cancellationToken);
+        return $"{yearPrefix}{count + 1:D4}";
     }
 }

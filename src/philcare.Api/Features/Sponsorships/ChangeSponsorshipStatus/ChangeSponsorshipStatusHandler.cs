@@ -43,6 +43,11 @@ public sealed class ChangeSponsorshipStatusHandler(AppDbContext db)
             sponsorship.EndDate = request.EndDate ?? DateTime.UtcNow.Date;
         }
 
+        // Keep the uniqueness flag in step with Status: null once Ended, so the donor/beneficiary
+        // pair frees up for a future pledge; true while Active or Paused, since a paused pledge
+        // still occupies the relationship and must not be duplicated.
+        sponsorship.IsActiveSponsorship = request.Status == SponsorshipStatus.Ended ? null : true;
+
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new ChangeSponsorshipStatusResponse(sponsorship.Id, sponsorship.Status.ToString(), sponsorship.EndDate));

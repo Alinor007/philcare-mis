@@ -13,7 +13,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.HasKey(p => p.Id);
 
         builder.Property(p => p.Name).IsRequired().HasMaxLength(200);
-        builder.Property(p => p.FundCode).HasMaxLength(20);
+        builder.Property(p => p.FundType).HasMaxLength(50);
         builder.Property(p => p.TotalBudget).HasPrecision(14, 2);
         builder.Property(p => p.Location).HasMaxLength(200);
         builder.Property(p => p.ProjectManager).HasMaxLength(200);
@@ -23,8 +23,7 @@ public class ProjectConfiguration : IEntityTypeConfiguration<Project>
 
         builder.Property(p => p.IsActive).HasDefaultValue(true);
 
-        builder.HasIndex(p => p.DonorId);
-        builder.HasIndex(p => p.FundCode);
+        builder.HasIndex(p => p.FundType);
 
         builder.HasOne(p => p.Program)
             .WithMany(pg => pg.Projects)

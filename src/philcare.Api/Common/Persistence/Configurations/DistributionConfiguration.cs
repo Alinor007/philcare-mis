@@ -28,10 +28,9 @@ public class DistributionConfiguration : IEntityTypeConfiguration<Distribution>
         builder.HasIndex(d => d.DistributionDate);
         builder.HasIndex(d => d.ExpenseId);
 
-        builder.HasOne(d => d.Beneficiary)
-            .WithMany(p => p.Distributions)
-            .HasForeignKey(d => d.BeneficiaryId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // No beneficiary FK here by design — a distribution reaches many people, and the only
+        // record of who is the DistributionBeneficiaries roster. The legacy BeneficiaryId column
+        // and its index/FK are dropped by the RemoveDistributionSingleBeneficiary migration.
 
         builder.HasOne(d => d.Activity)
             .WithMany(a => a.Distributions)

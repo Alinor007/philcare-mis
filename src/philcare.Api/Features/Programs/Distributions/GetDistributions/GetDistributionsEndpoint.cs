@@ -5,7 +5,7 @@ using philcare.Api.Common.Persistence;
 namespace philcare.Api.Features.Programs.Distributions.GetDistributions;
 
 public sealed record DistributionListItemResponse(
-    int Id, string DistributionType, int BeneficiaryId, string BeneficiaryName, decimal TotalValuePhp, DateTime DistributionDate, bool IsVoided);
+    int Id, string DistributionType, int BeneficiaryCount, decimal TotalValuePhp, DateTime DistributionDate, bool IsVoided);
 
 public sealed class GetDistributionsEndpoint : IEndpoint
 {
@@ -21,7 +21,7 @@ public sealed class GetDistributionsEndpoint : IEndpoint
             AppDbContext db,
             CancellationToken ct) =>
         {
-            var query = db.Distributions.Include(d => d.Beneficiary).AsQueryable();
+            var query = db.Distributions.AsQueryable();
 
             if (includeVoided != true)
             {
@@ -30,7 +30,10 @@ public sealed class GetDistributionsEndpoint : IEndpoint
 
             if (beneficiaryId is not null)
             {
-                query = query.Where(d => d.BeneficiaryId == beneficiaryId);
+                // Through the roster, since a distribution has no single recipient. This is also
+                // strictly better than the old FK filter: it finds every distribution that reached
+                // this person, not just the ones where they happened to be the primary recipient.
+                query = query.Where(d => d.Beneficiaries.Any(r => r.IsActive && r.BeneficiaryId == beneficiaryId));
             }
 
             if (activityId is not null)
@@ -56,7 +59,7 @@ public sealed class GetDistributionsEndpoint : IEndpoint
             var distributions = await query
                 .OrderByDescending(d => d.DistributionDate)
                 .Select(d => new DistributionListItemResponse(
-                    d.Id, d.DistributionType, d.BeneficiaryId, d.Beneficiary.FullName, d.TotalValuePhp, d.DistributionDate, d.IsVoided))
+                    d.Id, d.DistributionType, d.BeneficiaryCount, d.TotalValuePhp, d.DistributionDate, d.IsVoided))
                 .ToListAsync(ct);
 
             return Results.Ok(distributions);

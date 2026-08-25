@@ -9,8 +9,7 @@ public sealed record ProjectDetailResponse(
     int ProgramId,
     string ProgramName,
     string Name,
-    int? DonorId,
-    string? FundCode,
+    string? FundType,
     decimal TotalBudget,
     int? TargetBeneficiaries,
     DateTime? StartDate,
@@ -22,6 +21,7 @@ public sealed record ProjectDetailResponse(
     string? Notes,
     bool IsActive,
     int ActivityCount,
+    int DonorCount,
     // Set only by ChangeProjectStatus on the transition to COMPLETED — the UI reads it to show
     // when a project was closed, and to distinguish "closed" from merely "not ongoing".
     DateTime? ClosedAt);
@@ -35,9 +35,9 @@ public sealed class GetProjectByIdEndpoint : IEndpoint
             var project = await db.Projects
                 .Where(p => p.Id == id)
                 .Select(p => new ProjectDetailResponse(
-                    p.Id, p.ProgramId, p.Program.Name, p.Name, p.DonorId, p.FundCode, p.TotalBudget, p.TargetBeneficiaries,
+                    p.Id, p.ProgramId, p.Program.Name, p.Name, p.FundType, p.TotalBudget, p.TargetBeneficiaries,
                     p.StartDate, p.EndDate, p.Location, p.ProjectManager, p.ImplementationStatus, p.ApprovalLevel, p.Notes,
-                    p.IsActive, p.Activities.Count, p.ClosedAt))
+                    p.IsActive, p.Activities.Count, p.Donors.Count, p.ClosedAt))
                 .FirstOrDefaultAsync(ct);
 
             if (project is null)

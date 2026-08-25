@@ -1,15 +1,19 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.People.Domain;
 using philcare.Api.Features.Programs.Domain;
 
 namespace philcare.Api.Features.HumanResources.Domain;
 
 /// <summary>
-/// Paid staff roster — the org's employee directory.
+/// Paid-staff role profile — employment-specific fields for a <see cref="Person"/>. Identity
+/// (name, contact, photo) lives on Person; at most one StaffMember row exists per Person
+/// (enforced by a unique index on PersonId).
 ///
 /// Distinct from <see cref="Volunteer"/> (unpaid, and safeguarding-gated before it can be put on
-/// an activity) and from Governance.Person (board/committee identity, whose roster is derived
-/// from Assignments). A person can legitimately be more than one of the three; the records are
-/// not linked today, which is a known gap rather than an oversight.
+/// an activity) and from Governance's Assignment (board/committee role, granted independently of
+/// employment). A Person can legitimately hold any combination of the three now that they share
+/// one identity record — this used to be "a known gap rather than an oversight"; Person
+/// unification is that gap closed.
 ///
 /// No foreign key to User: not every staff member has a system login, and logins outlive
 /// employment. Staff attribution on records continues to come from the audit fields on
@@ -17,7 +21,9 @@ namespace philcare.Api.Features.HumanResources.Domain;
 /// </summary>
 public class StaffMember : Entity
 {
-    public string FullName { get; set; } = string.Empty;
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
+
     public string Position { get; set; } = string.Empty;
 
     // Reuses the existing org-unit vocabulary rather than a new category — the same list backs
@@ -30,8 +36,14 @@ public class StaffMember : Entity
     // non-nullable DateTime would import those as 0001-01-01, which MariaDB datetime(6) rejects.
     public DateTime? HiredDate { get; set; }
 
-    public string? Email { get; set; }
-    public string? Phone { get; set; }
+    // Reporting line. References Person, not another StaffMember row — a supervisor doesn't need
+    // their own employment profile in this system to be named as one (e.g. an external advisor,
+    // or someone whose StaffMember record hasn't been entered yet). Loosely enforced: the handler
+    // checks the Person exists, but nothing stops a supervisor who is later deactivated or whose
+    // own StaffMember profile is removed.
+    public int? SupervisorPersonId { get; set; }
+    public Person? SupervisorPerson { get; set; }
+
     public string? Notes { get; set; }
 
     // Soft-deactivation only, per the repo-wide rule. Deliberately the *only* lifecycle field:

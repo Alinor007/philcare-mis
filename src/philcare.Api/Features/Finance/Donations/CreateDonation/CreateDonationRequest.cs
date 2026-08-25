@@ -13,12 +13,12 @@ public sealed record CreateDonationRequest(
     bool RestrictedFlag,
     string? ProgramOrProject,
     string FundCode,
-    string? ReceiptNo,
     string? CashDocumentationStatus,
     bool SourceVerified,
     bool AdminAllowed,
     decimal AdminRateInput,
-    string? Notes);
+    string? Notes,
+    string? TransactionRef);
 
 public sealed record AllocationLineResponse(
     AllocationType AllocationType, string TargetBucketCode, decimal AllocationRate, decimal AllocatedAmountPhp);
@@ -37,6 +37,7 @@ public sealed record CreateDonationResponse(
     string? ProgramOrProject,
     string FundCode,
     string? ReceiptNo,
+    string? TransactionRef,
     bool AdminAllowed,
     decimal AdminRateInput,
     decimal AdminRateCap,

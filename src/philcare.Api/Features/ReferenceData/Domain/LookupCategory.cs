@@ -22,8 +22,12 @@ public static class LookupCategory
     // Pre-existing categories that were seeded without a matching constant.
     public const string AgeGroup = "age_group";
     public const string ImplementationStatus = "implementation_status";
-    public const string ParticipantType = "participant_type";
     public const string ProgramCategory = "program_category";
+    // Distinct from FundType above: that one belongs to actual Finance Fund entities (Zakat,
+    // Sadaqah, Waqf...) and has no consumer yet. This one categorizes a Project's funding source
+    // (partner contribution, internal fund, zakat, sponsorship, government/LGU support) and is
+    // purely informational — reusing FundType's category name would conflate the two.
+    public const string ProjectFundType = "project_fund_type";
     public const string OwnerDepartment = "owner_department";
     public const string VulnerabilityCategory = "vulnerability_category";
 
@@ -31,6 +35,11 @@ public static class LookupCategory
     // Program & Beneficiary workflow refactor — Sprint 6. AidProgram.Status had no vocabulary
     // at all before this (finding #29 in the pre-refactor audit).
     public const string ProgramStatus = "program_status";
+
+    // Person unification — shared identity for Staff/Volunteers/Members
+    public const string CivilStatus = "civil_status";
+    public const string MembershipType = "membership_type";
+    public const string MembershipStatus = "membership_status";
 
     // Governance — Sprint 5
     public const string PersonCategory = "person_category";

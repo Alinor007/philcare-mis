@@ -9,11 +9,11 @@ public class Project : Entity
 
     public string Name { get; set; } = string.Empty;
 
-    // Optional links into Finance — informational only, validated at the handler level
-    // rather than enforced as DB foreign keys, to keep the two modules loosely coupled.
-
-    public int? DonorId { get; set; } //can be removed
-    public string? FundCode { get; set; } //can be removed
+    // Which category of money funds this project. Informational only — it is a lookup label,
+    // not a link into Finance, so it stays loosely coupled the same way FundCode/DonorId were.
+    // Actual money movement is unaffected: Donation/Expense funding is wired through
+    // Fund/FundingBucket, never through this field.
+    public string? FundType { get; set; } // lookup: project_fund_type
 
     public decimal TotalBudget { get; set; }
     public int? TargetBeneficiaries { get; set; } //can be removed
@@ -31,4 +31,9 @@ public class Project : Entity
     public DateTime? ClosedAt { get; set; }
 
     public List<Activity> Activities { get; set; } = [];
+
+    public List<Distribution> Distributions { get; set } = [];
+
+    /// <summary>Donors supporting this project — a project can have several. See ProjectDonor.</summary>
+    public List<ProjectDonor> Donors { get; set; } = [];
 }

@@ -6,6 +6,7 @@ namespace philcare.Api.Features.HumanResources.Staff.GetStaffMembers;
 
 public sealed record StaffMemberListItemResponse(
     int Id,
+    int PersonId,
     string FullName,
     string Position,
     string? Department,
@@ -45,13 +46,14 @@ public sealed class GetStaffMembersEndpoint : IEndpoint
 
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(s => s.FullName.Contains(search) || s.Position.Contains(search));
+                // Name now lives on Person; Position stays on the role profile.
+                query = query.Where(s => s.Person.FullName.Contains(search) || s.Position.Contains(search));
             }
 
             var staff = await query
-                .OrderBy(s => s.FullName)
+                .OrderBy(s => s.Person.FullName)
                 .Select(s => new StaffMemberListItemResponse(
-                    s.Id, s.FullName, s.Position, s.Department, s.EmploymentType, s.HiredDate, s.IsActive))
+                    s.Id, s.PersonId, s.Person.FullName, s.Position, s.Department, s.EmploymentType, s.HiredDate, s.IsActive))
                 .ToListAsync(ct);
 
             return Results.Ok(staff);

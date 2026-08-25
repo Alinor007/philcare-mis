@@ -17,6 +17,8 @@ builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddValidation(typeof(Program).Assembly);
 builder.Services.AddFeatureHandlers();
+builder.Services.AddPhotoStorage(builder.Configuration);
+builder.Services.AddEmail(builder.Configuration);
 builder.Services.AddEndpoints(typeof(Program).Assembly);
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();

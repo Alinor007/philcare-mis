@@ -1,3 +1,5 @@
+using philcare.Api.Common.Domain;
+
 namespace philcare.Api.Features.Governance.People.UpdatePerson;
 
 public sealed record UpdatePersonRequest(
@@ -6,8 +8,17 @@ public sealed record UpdatePersonRequest(
     string Status,
     string? Email,
     string? ContactNumber,
+    string? DateOfBirth,
+    Gender Gender,
+    string? CivilStatus,
+    string? Barangay,
+    string? City,
+    string? Province,
+    string? Region,
+    string? EmergencyContactName,
+    string? EmergencyContactNumber,
+    string? PhotoUrl,
     bool DefaultVotingRights,
-    int? VolunteerId,
     string? Notes,
     bool IsActive);
 

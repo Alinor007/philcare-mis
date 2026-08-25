@@ -2,7 +2,7 @@ namespace philcare.Api.Features.Sponsorships.CreateSponsorship;
 
 public sealed record CreateSponsorshipRequest(
     int DonorId,
-    int ParticipantId,
+    int BeneficiaryId,
     string SponsorshipType,
     decimal MonthlyAmountPhp,
     DateTime StartDate,
@@ -11,4 +11,4 @@ public sealed record CreateSponsorshipRequest(
     string? Notes);
 
 public sealed record CreateSponsorshipResponse(
-    int Id, int DonorId, int ParticipantId, string SponsorshipType, decimal MonthlyAmountPhp, string Status);
+    int Id, int DonorId, int BeneficiaryId, string SponsorshipType, decimal MonthlyAmountPhp, string Status);

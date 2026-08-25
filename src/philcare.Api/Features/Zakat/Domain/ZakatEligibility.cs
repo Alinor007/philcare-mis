@@ -13,13 +13,13 @@ public enum ZakatEligibilityStatus
 
 /// <summary>
 /// Formal zakat-aid case assessment + approval. Feeds Distribution.ZakatAsnaf: a zakat-bucket
-/// distribution requires an Approved, unexpired eligibility for the participant
+/// distribution requires an Approved, unexpired eligibility for the beneficiary
 /// (see CreateDistributionHandler).
 /// </summary>
 public class ZakatEligibility : Entity
 {
-    public int ParticipantId { get; set; }
-    public Participant Participant { get; set; } = null!;
+    public int BeneficiaryId { get; set; }
+    public Beneficiary Beneficiary { get; set; } = null!;
 
     public string AsnafCategory { get; set; } = string.Empty; // lookup: zakat_asnaf
     public decimal? MonthlyIncomePhp { get; set; }
@@ -36,9 +36,9 @@ public class ZakatEligibility : Entity
     public string? Notes { get; set; }
 
     /// <summary>
-    /// true only while this case is the participant's live (Approved, unexpired) approval; null otherwise.
-    /// Backed by a unique index on (ParticipantId, IsLiveApproval) — NULLs never collide, so at most one
-    /// true row can exist per participant. This is the MariaDB 10.4 substitute for a filtered unique index
+    /// true only while this case is the beneficiary's live (Approved, unexpired) approval; null otherwise.
+    /// Backed by a unique index on (BeneficiaryId, IsLiveApproval) — NULLs never collide, so at most one
+    /// true row can exist per beneficiary. This is the MariaDB 10.4 substitute for a filtered unique index
     /// and closes the concurrent-approval race. Reads (distribution gate, handler pre-checks) still use
     /// Status/ValidUntil; the flag exists purely for the DB-level uniqueness guarantee.
     /// </summary>

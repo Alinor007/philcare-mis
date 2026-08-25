@@ -18,11 +18,17 @@ using philcare.Api.Features.Finance.Donations.VoidDonation;
 using philcare.Api.Features.Finance.DonorEngagements.CreateDonorEngagement;
 using philcare.Api.Features.Finance.DonorEngagements.UpdateDonorEngagement;
 using philcare.Api.Features.Finance.Donors.CreateDonor;
+using philcare.Api.Features.Finance.Donors.ReviewDonorKyd;
 using philcare.Api.Features.Finance.Donors.UpdateDonor;
 using philcare.Api.Features.Finance.Expenses.CreateExpense;
 using philcare.Api.Features.Finance.Expenses.VoidExpense;
 using philcare.Api.Features.Finance.OtherIncomes.CreateOtherIncome;
 using philcare.Api.Features.Finance.OtherIncomes.VoidOtherIncome;
+using philcare.Api.Features.Attachments.Domain;
+using philcare.Api.Features.Attachments.UploadPhoto;
+using philcare.Api.Features.Finance.Donations.ResendDonationReceipt;
+using philcare.Api.Infrastructure.Email;
+using Resend;
 using philcare.Api.Features.Governance.Assignments.CreateAssignment;
 using philcare.Api.Features.Governance.Assignments.UpdateAssignment;
 using philcare.Api.Features.Governance.Decisions.CreateDecision;
@@ -45,10 +51,13 @@ using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.Activities.UpdateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
 using philcare.Api.Features.Programs.AidPrograms.UpdateProgram;
+using philcare.Api.Features.Programs.DistributionBeneficiaries.AddDistributionBeneficiary;
+using philcare.Api.Features.Programs.DistributionBeneficiaries.UpdateDistributionBeneficiary;
 using philcare.Api.Features.Programs.Distributions.CreateDistribution;
 using philcare.Api.Features.Programs.Distributions.VoidDistribution;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
-using philcare.Api.Features.Programs.Participants.UpdateParticipant;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
+using philcare.Api.Features.Programs.Beneficiaries.UpdateBeneficiary;
+using philcare.Api.Features.Programs.ProjectDonors.AddProjectDonor;
 using philcare.Api.Features.Programs.Projects.ChangeProjectStatus;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Api.Features.Programs.Projects.UpdateProject;
@@ -60,6 +69,8 @@ using philcare.Api.Features.Sponsorships.ChangeSponsorshipStatus;
 using philcare.Api.Features.Sponsorships.CreateSponsorship;
 using philcare.Api.Features.Sponsorships.UpdateSponsorship;
 using philcare.Api.Features.Users.UpdateUser;
+using philcare.Api.Features.People.Memberships.CreateMembership;
+using philcare.Api.Features.People.Memberships.UpdateMembership;
 using philcare.Api.Features.HumanResources.Staff.CreateStaffMember;
 using philcare.Api.Features.HumanResources.Staff.UpdateStaffMember;
 using philcare.Api.Features.HumanResources.Volunteers.ActivityVolunteers.AddActivityVolunteer;
@@ -105,6 +116,34 @@ public static class DependencyInjection
         return services;
     }
 
+    public static IServiceCollection AddPhotoStorage(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<PhotoStorageOptions>(configuration.GetSection(PhotoStorageOptions.SectionName));
+        // Singleton: it holds only the resolved root path, and does no per-request state.
+        services.AddSingleton<PhotoStore>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        var section = configuration.GetSection(EmailOptions.SectionName);
+        services.Configure<EmailOptions>(section);
+        var emailOptions = section.Get<EmailOptions>() ?? new EmailOptions();
+
+        // Registered unconditionally — a blank ApiKey is safe because OutboxDispatcher checks
+        // EmailOptions.Enabled/ApiKey itself before ever calling IResend and simply idles otherwise.
+        services.AddResend(o =>
+        {
+            o.ApiToken = emailOptions.ApiKey;
+            o.ThrowExceptions = true;
+        });
+
+        services.AddHostedService<OutboxDispatcher>();
+
+        return services;
+    }
+
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var jwtSection = configuration.GetSection(JwtOptions.SectionName);
@@ -140,7 +179,7 @@ public static class DependencyInjection
             // Program delivery writes — programs, projects, activities, distributions, rosters,
             // and creating/editing beneficiaries.
             .AddPolicy("Program", policy => policy.RequireRole("Program", "Admin"))
-            // Beneficiary casework: zakat eligibility cases plus READ access to the participant
+            // Beneficiary casework: zakat eligibility cases plus READ access to the beneficiary
             // registry those cases are raised against — assessing a case means looking the person
             // up, so the two cannot be separated. Creating/editing beneficiaries stays "Program",
             // and the zakat approve/reject decision stays "Admin", so the department that assesses
@@ -176,6 +215,7 @@ public static class DependencyInjection
         // Finance handlers — Sprint 2
         services.AddScoped<CreateDonorHandler>();
         services.AddScoped<UpdateDonorHandler>();
+        services.AddScoped<ReviewDonorKydHandler>();
         services.AddScoped<CreateDonationHandler>();
         services.AddScoped<VoidDonationHandler>();
         services.AddScoped<CreateExpenseHandler>();
@@ -187,11 +227,13 @@ public static class DependencyInjection
         services.AddScoped<CreateProgramHandler>();
         services.AddScoped<UpdateProgramHandler>();
         services.AddScoped<CreateProjectHandler>();
+        // Get and Remove are endpoint-only and need no registration.
+        services.AddScoped<AddProjectDonorHandler>();
         services.AddScoped<UpdateProjectHandler>();
         services.AddScoped<CreateActivityHandler>();
         services.AddScoped<UpdateActivityHandler>();
-        services.AddScoped<CreateParticipantHandler>();
-        services.AddScoped<UpdateParticipantHandler>();
+        services.AddScoped<CreateBeneficiaryHandler>();
+        services.AddScoped<UpdateBeneficiaryHandler>();
         services.AddScoped<AddActivityParticipantHandler>();
         services.AddScoped<CreateDistributionHandler>();
 
@@ -237,8 +279,22 @@ public static class DependencyInjection
         services.AddScoped<VoidDistributionHandler>();
 
         // Human Resources — Sprint 7
+        // Person unification — membership roll
+        services.AddScoped<CreateMembershipHandler>();
+        services.AddScoped<UpdateMembershipHandler>();
+
         services.AddScoped<CreateStaffMemberHandler>();
         services.AddScoped<UpdateStaffMemberHandler>();
+
+        // Distribution reach roster — Get and Remove are endpoint-only and need no registration.
+        services.AddScoped<AddDistributionBeneficiaryHandler>();
+        services.AddScoped<UpdateDistributionBeneficiaryHandler>();
+
+        // Photo attachments — GetPhoto is endpoint-only and needs no registration.
+        services.AddScoped<UploadPhotoHandler>();
+
+        // Donation confirmation email — outbox + resend action.
+        services.AddScoped<ResendDonationReceiptHandler>();
 
         return services;
     }

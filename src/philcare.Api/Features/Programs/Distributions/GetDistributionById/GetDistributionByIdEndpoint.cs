@@ -7,8 +7,6 @@ namespace philcare.Api.Features.Programs.Distributions.GetDistributionById;
 public sealed record DistributionDetailResponse(
     int Id,
     string DistributionType,
-    int BeneficiaryId,
-    string BeneficiaryName,
     int? ActivityId,
     string? FundingBucketCode,
     int Quantity,
@@ -37,7 +35,7 @@ public sealed class GetDistributionByIdEndpoint : IEndpoint
             var distribution = await db.Distributions
                 .Where(d => d.Id == id)
                 .Select(d => new DistributionDetailResponse(
-                    d.Id, d.DistributionType, d.BeneficiaryId, d.Beneficiary.FullName, d.ActivityId, d.FundingBucketCode,
+                    d.Id, d.DistributionType, d.ActivityId, d.FundingBucketCode,
                     d.Quantity, d.UnitValuePhp, d.TotalValuePhp, d.BeneficiaryCount, d.DistributionDate, d.Location,
                     d.FieldVerified, d.ReceivedConfirmation, d.ProcessedBy, d.ZakatAsnaf, d.Notes, d.IsVoided, d.ExpenseId))
                 .FirstOrDefaultAsync(ct);

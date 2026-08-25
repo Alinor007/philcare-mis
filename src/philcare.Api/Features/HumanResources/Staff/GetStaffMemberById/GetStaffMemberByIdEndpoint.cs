@@ -6,13 +6,17 @@ namespace philcare.Api.Features.HumanResources.Staff.GetStaffMemberById;
 
 public sealed record StaffMemberDetailResponse(
     int Id,
+    int PersonId,
     string FullName,
+    string? Email,
+    string? ContactNumber,
+    string? PhotoUrl,
     string Position,
     string? Department,
     string EmploymentType,
     DateTime? HiredDate,
-    string? Email,
-    string? Phone,
+    int? SupervisorPersonId,
+    string? SupervisorName,
     string? Notes,
     bool IsActive);
 
@@ -25,8 +29,10 @@ public sealed class GetStaffMemberByIdEndpoint : IEndpoint
             var staffMember = await db.StaffMembers
                 .Where(s => s.Id == id)
                 .Select(s => new StaffMemberDetailResponse(
-                    s.Id, s.FullName, s.Position, s.Department, s.EmploymentType, s.HiredDate,
-                    s.Email, s.Phone, s.Notes, s.IsActive))
+                    s.Id, s.PersonId, s.Person.FullName, s.Person.Email, s.Person.ContactNumber, s.Person.PhotoUrl,
+                    s.Position, s.Department, s.EmploymentType, s.HiredDate,
+                    s.SupervisorPersonId, s.SupervisorPerson != null ? s.SupervisorPerson.FullName : null,
+                    s.Notes, s.IsActive))
                 .FirstOrDefaultAsync(ct);
 
             if (staffMember is null)

@@ -24,7 +24,6 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
         builder.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(50);
         builder.Property(e => e.ReceiptNo).HasMaxLength(100);
         builder.Property(e => e.ApprovalStatus).IsRequired().HasMaxLength(50);
-        builder.Property(e => e.ApprovedBy).HasMaxLength(200);
         builder.Property(e => e.SupportingDocStatus).HasMaxLength(50);
         builder.Property(e => e.ExpenseFunction).HasMaxLength(100);
         builder.Property(e => e.FundingBucketCode).IsRequired().HasMaxLength(20);
@@ -45,6 +44,11 @@ public class ExpenseConfiguration : IEntityTypeConfiguration<Expense>
             .WithMany(b => b.Expenses)
             .HasForeignKey(e => e.FundingBucketCode)
             .HasPrincipalKey(b => b.Code)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(e => e.ApprovedByPerson)
+            .WithMany()
+            .HasForeignKey(e => e.ApprovedByPersonId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

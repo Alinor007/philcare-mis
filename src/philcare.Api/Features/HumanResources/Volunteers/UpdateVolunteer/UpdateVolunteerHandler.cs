@@ -8,21 +8,15 @@ public sealed class UpdateVolunteerHandler(AppDbContext db)
 {
     public async Task<Result<UpdateVolunteerResponse>> HandleAsync(int id, UpdateVolunteerRequest request, CancellationToken cancellationToken)
     {
-        var volunteer = await db.Volunteers.FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
+        var volunteer = await db.Volunteers
+            .Include(v => v.Person)
+            .FirstOrDefaultAsync(v => v.Id == id, cancellationToken);
 
         if (volunteer is null)
         {
             return Result.Failure<UpdateVolunteerResponse>(Error.NotFound("Volunteers.NotFound", "Volunteer not found."));
         }
 
-        volunteer.FullName = request.FullName;
-        volunteer.Gender = request.Gender;
-        volunteer.Phone = request.Phone;
-        volunteer.Email = request.Email;
-        volunteer.Barangay = request.Barangay;
-        volunteer.City = request.City;
-        volunteer.Province = request.Province;
-        volunteer.Region = request.Region;
         volunteer.Skills = request.Skills;
         volunteer.AvailabilityDays = request.AvailabilityDays;
         volunteer.Status = request.Status;
@@ -37,6 +31,7 @@ public sealed class UpdateVolunteerHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateVolunteerResponse(
-            volunteer.Id, volunteer.FullName, volunteer.Gender, volunteer.Status, volunteer.OrientationCompleted, volunteer.IsActive));
+            volunteer.Id, volunteer.PersonId, volunteer.Person.FullName, volunteer.Status,
+            volunteer.OrientationCompleted, volunteer.IsActive));
     }
 }

@@ -1,12 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Api;
 using philcare.Api.Common.Persistence;
-using philcare.Api.Features.Programs.Domain;
+using philcare.Api.Common.Domain;
 
 namespace philcare.Api.Features.HumanResources.Volunteers.GetVolunteerById;
 
+/// <summary>Identity fields are read through the Person this profile belongs to.</summary>
 public sealed record VolunteerDetailResponse(
     int Id,
+    int PersonId,
     string FullName,
     Gender Gender,
     string? Phone,
@@ -15,6 +17,7 @@ public sealed record VolunteerDetailResponse(
     string? City,
     string? Province,
     string? Region,
+    string? PhotoUrl,
     string? Skills,
     string? AvailabilityDays,
     string Status,
@@ -36,8 +39,9 @@ public sealed class GetVolunteerByIdEndpoint : IEndpoint
             var volunteer = await db.Volunteers
                 .Where(v => v.Id == id)
                 .Select(v => new VolunteerDetailResponse(
-                    v.Id, v.FullName, v.Gender, v.Phone, v.Email, v.Barangay, v.City, v.Province, v.Region, v.Skills,
-                    v.AvailabilityDays, v.Status,
+                    v.Id, v.PersonId, v.Person.FullName, v.Person.Gender, v.Person.ContactNumber, v.Person.Email,
+                    v.Person.Barangay, v.Person.City, v.Person.Province, v.Person.Region, v.Person.PhotoUrl,
+                    v.Skills, v.AvailabilityDays, v.Status,
                     v.OrientationCompleted, v.OrientationDate, v.CodeOfConductSigned, v.CodeOfConductDate, v.PoliceClearanceOnFile,
                     v.Notes, v.IsActive, v.ActivityVolunteers.Count))
                 .FirstOrDefaultAsync(ct);

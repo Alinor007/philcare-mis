@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Domain;
 using philcare.Api.Common.Persistence;
 using philcare.Api.Features.HumanResources.Domain;
@@ -8,16 +9,32 @@ public sealed class CreateVolunteerHandler(AppDbContext db)
 {
     public async Task<Result<CreateVolunteerResponse>> HandleAsync(CreateVolunteerRequest request, CancellationToken cancellationToken)
     {
+        var person = await db.GovernancePeople.FirstOrDefaultAsync(p => p.Id == request.PersonId, cancellationToken);
+
+        if (person is null)
+        {
+            return Result.Failure<CreateVolunteerResponse>(Error.NotFound("Volunteers.PersonNotFound", "Person not found."));
+        }
+
+        if (!person.IsActive)
+        {
+            return Result.Failure<CreateVolunteerResponse>(
+                Error.Validation("Volunteers.PersonInactive", "Cannot create a volunteer profile for an inactive person."));
+        }
+
+        // One volunteer profile per person — mirrors the unique index on PersonId, checked here
+        // first so the caller gets a clean conflict rather than a raw 500.
+        var alreadyVolunteer = await db.Volunteers.AnyAsync(v => v.PersonId == request.PersonId, cancellationToken);
+
+        if (alreadyVolunteer)
+        {
+            return Result.Failure<CreateVolunteerResponse>(
+                Error.Conflict("Volunteers.AlreadyVolunteer", "This person already has a volunteer profile."));
+        }
+
         var volunteer = new Volunteer
         {
-            FullName = request.FullName,
-            Gender = request.Gender,
-            Phone = request.Phone,
-            Email = request.Email,
-            Barangay = request.Barangay,
-            City = request.City,
-            Province = request.Province,
-            Region = request.Region,
+            PersonId = request.PersonId,
             Skills = request.Skills,
             AvailabilityDays = request.AvailabilityDays,
             Status = "ACTIVE",
@@ -34,6 +51,7 @@ public sealed class CreateVolunteerHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CreateVolunteerResponse(
-            volunteer.Id, volunteer.FullName, volunteer.Gender, volunteer.Status, volunteer.OrientationCompleted, volunteer.IsActive));
+            volunteer.Id, volunteer.PersonId, person.FullName, volunteer.Status,
+            volunteer.OrientationCompleted, volunteer.IsActive));
     }
 }

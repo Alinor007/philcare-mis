@@ -79,15 +79,6 @@
   { "Category": "distribution_type", "Code": "MEDICAL_SUPPLIES", "Label": "Medical Supplies", "SortOrder": 5 },
   { "Category": "distribution_type", "Code": "SHELTER_KIT", "Label": "Shelter Kit", "SortOrder": 6 },
 
-  { "Category": "participant_type", "Code": "BENEFICIARY", "Label": "Beneficiary", "SortOrder": 1 },
-  { "Category": "participant_type", "Code": "TRAINEE", "Label": "Trainee", "SortOrder": 2 },
-  { "Category": "participant_type", "Code": "ATTENDEE", "Label": "Attendee", "SortOrder": 3 },
-  { "Category": "participant_type", "Code": "VOLUNTEER", "Label": "Volunteer", "SortOrder": 4 },
-  { "Category": "participant_type", "Code": "PARTNER_REP", "Label": "Partner Representative", "SortOrder": 5 },
-  { "Category": "participant_type", "Code": "COMMUNITY_LEADER", "Label": "Community Leader", "SortOrder": 6 },
-  { "Category": "participant_type", "Code": "DONOR_REP", "Label": "Donor Representative", "SortOrder": 7 },
-  { "Category": "participant_type", "Code": "OBSERVER", "Label": "Observer / Auditor", "SortOrder": 8 },
-
   { "Category": "vulnerability_category", "Code": "POOR", "Label": "Poor Household", "SortOrder": 1 },
   { "Category": "vulnerability_category", "Code": "EXTREME_POOR_HOUSEHOLD", "Label": "Extreme Poor Household", "SortOrder": 2 },
   { "Category": "vulnerability_category", "Code": "FOOD_INSECURE_HOUSEHOLD", "Label": "Food Insecure Household", "SortOrder": 3 },
@@ -133,7 +124,13 @@
   { "Category": "program_category", "Code": "ADMIN", "Label": "Admin", "SortOrder": 2 },
   { "Category": "program_category", "Code": "PROGRAMMATIC", "Label": "Programmatic", "SortOrder": 3 },
   { "Category": "program_category", "Code": "SUPPORT_FUNCTION", "Label": "Support Function", "SortOrder": 4 },
-  
+
+  { "Category": "project_fund_type", "Code": "PARTNER_CONTRIBUTION", "Label": "Partner Contribution", "SortOrder": 1 },
+  { "Category": "project_fund_type", "Code": "INTERNAL_FUND", "Label": "Internal Fund", "SortOrder": 2 },
+  { "Category": "project_fund_type", "Code": "ZAKAT", "Label": "Zakat", "SortOrder": 3 },
+  { "Category": "project_fund_type", "Code": "SPONSORSHIP", "Label": "Sponsorship", "SortOrder": 4 },
+  { "Category": "project_fund_type", "Code": "GOVERNMENT_LGU", "Label": "Government / LGU Support", "SortOrder": 5 },
+
   { "Category": "owner_department", "Code": "BOARD_OF_TRUSTEES", "Label": "Board of Trustees", "SortOrder": 1 },
   { "Category": "owner_department", "Code": "EXECUTIVE_MANAGEMENT", "Label": "Executive Management", "SortOrder": 2 },
   { "Category": "owner_department", "Code": "HUMANITARIAN_PROGRAMS_DEPARTMENT", "Label": "Humanitarian Programs Department", "SortOrder": 3 },
@@ -173,7 +170,7 @@
   { "Category": "sponsorship_type", "Code": "FAMILY", "Label": "Family Sponsorship", "SortOrder": 3 },
   { "Category": "sponsorship_type", "Code": "STUDENT", "Label": "Student Sponsorship", "SortOrder": 4 },
 
-  { "Category": "income_type", "Code": "CAPITAL_INCOME", "Label": "Capital Income (Rental, Investment & Asset Returns)", "SortOrder": 1 },
+  { "Category": "income_type", "Code": "CAPITAL_INCOME", "Label": "Capital Income", "SortOrder": 1 },
   { "Category": "income_type", "Code": "GRANT", "Label": "Grant", "SortOrder": 2 },
   { "Category": "income_type", "Code": "WAQF_ENDOWMENT", "Label": "Waqf / Endowment Income", "SortOrder": 3 },
   { "Category": "income_type", "Code": "GOVERNMENT_SUPPORT", "Label": "Government / LGU Support", "SortOrder": 4 },
@@ -195,13 +192,25 @@
   { "Category": "engagement_type", "Code": "OTHER", "Label": "Other", "SortOrder": 9 },
 
   { "Category": "beneficiary_type", "Code": "INDIVIDUAL", "Label": "Individual", "SortOrder": 1 },
-  { "Category": "beneficiary_type", "Code": "HOUSEHOLD", "Label": "Household", "SortOrder": 2 },
-  { "Category": "beneficiary_type", "Code": "INSTITUTION", "Label": "Institution", "SortOrder": 3 },
-  { "Category": "beneficiary_type", "Code": "GROUP", "Label": "Group", "SortOrder": 4 },
-  { "Category": "beneficiary_type", "Code": "SCHOOL", "Label": "School", "SortOrder": 5 },
-  { "Category": "beneficiary_type", "Code": "MADRASA", "Label": "Madrasa", "SortOrder": 6 },
-  { "Category": "beneficiary_type", "Code": "MASJID", "Label": "Masjid", "SortOrder": 7 },
-  { "Category": "beneficiary_type", "Code": "COMMUNITY_ORGANIZATION", "Label": "Community Organization", "SortOrder": 8 },
+  { "Category": "beneficiary_type", "Code": "INSTITUTION", "Label": "Institution", "SortOrder": 2 },
+  { "Category": "beneficiary_type", "Code": "MADRASA", "Label": "Madrasa", "SortOrder": 3 },
+  { "Category": "beneficiary_type", "Code": "MASJID", "Label": "Masjid", "SortOrder": 4 },
+
+  { "Category": "civil_status", "Code": "SINGLE", "Label": "Single", "SortOrder": 1 },
+  { "Category": "civil_status", "Code": "MARRIED", "Label": "Married", "SortOrder": 2 },
+  { "Category": "civil_status", "Code": "WIDOWED", "Label": "Widowed", "SortOrder": 3 },
+  { "Category": "civil_status", "Code": "SEPARATED", "Label": "Separated", "SortOrder": 4 },
+  { "Category": "civil_status", "Code": "DIVORCED", "Label": "Divorced", "SortOrder": 5 },
+
+  { "Category": "membership_type", "Code": "REGULAR", "Label": "Regular Member", "SortOrder": 1 },
+  { "Category": "membership_type", "Code": "ASSOCIATE", "Label": "Associate Member", "SortOrder": 2 },
+  { "Category": "membership_type", "Code": "LIFETIME", "Label": "Lifetime Member", "SortOrder": 3 },
+  { "Category": "membership_type", "Code": "HONORARY", "Label": "Honorary Member", "SortOrder": 4 },
+
+  { "Category": "membership_status", "Code": "ACTIVE", "Label": "Active", "SortOrder": 1 },
+  { "Category": "membership_status", "Code": "LAPSED", "Label": "Lapsed", "SortOrder": 2 },
+  { "Category": "membership_status", "Code": "SUSPENDED", "Label": "Suspended", "SortOrder": 3 },
+  { "Category": "membership_status", "Code": "RESIGNED", "Label": "Resigned", "SortOrder": 4 },
 
   { "Category": "person_category", "Code": "BOARD", "Label": "Board", "SortOrder": 1 },
   { "Category": "person_category", "Code": "EXECUTIVE", "Label": "Executive", "SortOrder": 2 },
@@ -221,11 +230,12 @@
 
   { "Category": "governance_role_category", "Code": "BOARD", "Label": "Board", "SortOrder": 1 },
   { "Category": "governance_role_category", "Code": "BOARD_EXECUTIVE", "Label": "Board / Executive", "SortOrder": 2 },
-  { "Category": "governance_role_category", "Code": "EXECUTIVE", "Label": "Executive", "SortOrder": 3 },
-  { "Category": "governance_role_category", "Code": "MEMBERSHIP", "Label": "Membership", "SortOrder": 4 },
-  { "Category": "governance_role_category", "Code": "STAFF", "Label": "Staff", "SortOrder": 5 },
-  { "Category": "governance_role_category", "Code": "VOLUNTEER", "Label": "Volunteer", "SortOrder": 6 },
-  { "Category": "governance_role_category", "Code": "GENERIC", "Label": "Generic", "SortOrder": 7 },
+  { "Category": "governance_role_category", "Code": "EXECUTIVE_MANAGEMENT", "Label": "Executive Management", "SortOrder": 3 },
+  { "Category": "governance_role_category", "Code": "EXECUTIVE_DEPARTMENT", "Label": "Executive Department", "SortOrder": 4 },
+  { "Category": "governance_role_category", "Code": "MEMBERSHIP", "Label": "Membership", "SortOrder": 5 },
+  { "Category": "governance_role_category", "Code": "STAFF", "Label": "Staff", "SortOrder": 6 },
+  { "Category": "governance_role_category", "Code": "VOLUNTEER", "Label": "Volunteer", "SortOrder": 7 },
+  { "Category": "governance_role_category", "Code": "GENERIC", "Label": "Generic", "SortOrder": 8 },
 
   { "Category": "meeting_type", "Code": "GENERAL_ASSEMBLY_ANNUAL", "Label": "General Assembly Annual Meeting", "SortOrder": 1 },
   { "Category": "meeting_type", "Code": "BOARD_STRATEGIC", "Label": "Board Strategic Meeting", "SortOrder": 2 },
@@ -311,6 +321,6 @@
   { "Category": "employment_type", "Code": "CONTRACT", "Label": "Contract", "SortOrder": 3 },
   { "Category": "employment_type", "Code": "CONSULTANT", "Label": "Consultant", "SortOrder": 4 },
   { "Category": "employment_type", "Code": "SECONDED", "Label": "Seconded", "SortOrder": 5 },
-  { "Category": "employment_type", "Code": "INTERN", "Label": "Intern", "SortOrder": 6 },
-  { "Category": "employment_type", "Code": "VOLUNTEER_STAFF", "Label": "Volunteer Staff", "SortOrder": 7 }
+  { "Category": "employment_type", "Code": "INTERN", "Label": "Intern", "SortOrder": 6 }
+
 ]

@@ -15,9 +15,9 @@ public sealed class CreateDonationValidator : AbstractValidator<CreateDonationRe
         RuleFor(x => x.FundCode).NotEmpty().MaximumLength(20);
         RuleFor(x => x.Purpose).MaximumLength(200);
         RuleFor(x => x.ProgramOrProject).MaximumLength(200);
-        RuleFor(x => x.ReceiptNo).MaximumLength(100);
         RuleFor(x => x.CashDocumentationStatus).MaximumLength(50);
         RuleFor(x => x.Notes).MaximumLength(1000);
+        RuleFor(x => x.TransactionRef).MaximumLength(100);
 
         // Sanity ceiling; the authoritative cap is the target admin bucket's own MaxAdminRate,
         // enforced by CreateDonationHandler once the fund/bucket is resolved.

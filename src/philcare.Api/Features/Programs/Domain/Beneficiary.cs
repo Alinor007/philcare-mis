@@ -24,7 +24,16 @@ public class Beneficiary : Entity
     public string? Remarks { get; set; }
     public bool IsActive { get; set; } = true;
 
+    // Optional profile photo — see StaffMember.PhotoUrl. This one is beneficiary PII: whatever
+    // hosts the file needs the same Program/Admin gate the rest of this record has, or the photo
+    // becomes the way around it.
+    public string? PhotoUrl { get; set; }
+
     // No ActivityParticipants navigation: that join is the Activity *staffing* roster and belongs
     // to StaffMember. A beneficiary's link to an activity is the aid they received there.
-    public List<Distribution> Distributions { get; set; } = [];
+
+    // Every distribution that reached this person, via the reach roster. There is no direct
+    // Distribution collection: a distribution has no single recipient, so the only honest link is
+    // through the roster.
+    public List<DistributionBeneficiary> DistributionBeneficiaries { get; set; } = [];
 }

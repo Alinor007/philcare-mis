@@ -16,10 +16,20 @@ public sealed class CreateExpenseHandler(AppDbContext db)
             return Result.Failure<CreateExpenseResponse>(Error.NotFound("Expenses.FundingBucketNotFound", "Funding bucket not found."));
         }
 
+        if (request.ApprovedByPersonId is not null)
+        {
+            var approverExists = await db.GovernancePeople.AnyAsync(p => p.Id == request.ApprovedByPersonId, cancellationToken);
+
+            if (!approverExists)
+            {
+                return Result.Failure<CreateExpenseResponse>(Error.NotFound("Expenses.ApprovedByPersonNotFound", "Approver not found."));
+            }
+        }
+
         var posting = ExpensePosting.Post(bucket, new ExpensePostingRequest(
             request.ExpenseDate, request.PayeeVendor, request.ExpenseCategory, request.Description, request.PaymentMethod,
             request.AmountOriginal, request.Currency, request.FxRateToPhp, request.ProgramOrProject, request.ReceiptNo,
-            request.ApprovedBy, request.SupportingDocStatus, request.LinkedDonationId, request.ExpenseFunction,
+            request.ApprovedByPersonId, request.SupportingDocStatus, request.LinkedDonationId, request.ExpenseFunction,
             request.ZakatAsnaf, request.BeneficiaryCount, request.BeneficiaryType, request.Notes));
 
         if (posting.IsFailure)

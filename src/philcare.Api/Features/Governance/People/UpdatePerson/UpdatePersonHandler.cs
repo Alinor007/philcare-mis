@@ -15,23 +15,22 @@ public sealed class UpdatePersonHandler(AppDbContext db)
             return Result.Failure<UpdatePersonResponse>(Error.NotFound("Governance.PersonNotFound", "Person not found."));
         }
 
-        if (request.VolunteerId is not null)
-        {
-            var volunteerExists = await db.Volunteers.AnyAsync(v => v.Id == request.VolunteerId, cancellationToken);
-
-            if (!volunteerExists)
-            {
-                return Result.Failure<UpdatePersonResponse>(Error.NotFound("Governance.VolunteerNotFound", "Volunteer not found."));
-            }
-        }
-
         person.FullName = request.FullName;
         person.PersonCategory = request.PersonCategory;
         person.Status = request.Status;
         person.Email = request.Email;
         person.ContactNumber = request.ContactNumber;
+        person.DateOfBirth = request.DateOfBirth;
+        person.Gender = request.Gender;
+        person.CivilStatus = request.CivilStatus;
+        person.Barangay = request.Barangay;
+        person.City = request.City;
+        person.Province = request.Province;
+        person.Region = request.Region;
+        person.EmergencyContactName = request.EmergencyContactName;
+        person.EmergencyContactNumber = request.EmergencyContactNumber;
+        person.PhotoUrl = request.PhotoUrl;
         person.DefaultVotingRights = request.DefaultVotingRights;
-        person.VolunteerId = request.VolunteerId;
         person.Notes = request.Notes;
         person.IsActive = request.IsActive;
 

@@ -27,22 +27,22 @@ public sealed class DecideZakatEligibilityHandler(AppDbContext db)
             var today = DateTime.UtcNow.Date;
 
             var alreadyApproved = await db.ZakatEligibilities.AnyAsync(
-                z => z.Id != id && z.ParticipantId == eligibility.ParticipantId && z.Status == ZakatEligibilityStatus.Approved
+                z => z.Id != id && z.BeneficiaryId == eligibility.BeneficiaryId && z.Status == ZakatEligibilityStatus.Approved
                     && (z.ValidUntil == null || z.ValidUntil >= today),
                 cancellationToken);
 
             if (alreadyApproved)
             {
                 return Result.Failure<DecideZakatEligibilityResponse>(
-                    Error.Conflict("Zakat.AlreadyApproved", "This participant already has an approved, unexpired zakat eligibility case."));
+                    Error.Conflict("Zakat.AlreadyApproved", "This beneficiary already has an approved, unexpired zakat eligibility case."));
             }
 
-            // Clear the live-approval flag on any of this participant's Approved cases that have since
-            // expired, so a fresh approval doesn't collide with the (ParticipantId, IsLiveApproval)
+            // Clear the live-approval flag on any of this beneficiary's Approved cases that have since
+            // expired, so a fresh approval doesn't collide with the (BeneficiaryId, IsLiveApproval)
             // unique index — that index is what actually closes the concurrent-approval race; the
             // AnyAsync check above is just a friendly pre-flight for the common case.
             var expiredLiveApprovals = await db.ZakatEligibilities
-                .Where(z => z.ParticipantId == eligibility.ParticipantId && z.IsLiveApproval == true
+                .Where(z => z.BeneficiaryId == eligibility.BeneficiaryId && z.IsLiveApproval == true
                     && z.ValidUntil != null && z.ValidUntil < today)
                 .ToListAsync(cancellationToken);
 
@@ -71,11 +71,11 @@ public sealed class DecideZakatEligibilityHandler(AppDbContext db)
         }
         catch (DbUpdateException) when (request.Approve)
         {
-            // The (ParticipantId, IsLiveApproval) unique index caught a concurrent approval that the
+            // The (BeneficiaryId, IsLiveApproval) unique index caught a concurrent approval that the
             // AnyAsync pre-check above missed — lose cleanly with the same conflict the pre-check would
             // have returned, instead of surfacing a raw 500.
             return Result.Failure<DecideZakatEligibilityResponse>(
-                Error.Conflict("Zakat.AlreadyApproved", "This participant already has an approved, unexpired zakat eligibility case."));
+                Error.Conflict("Zakat.AlreadyApproved", "This beneficiary already has an approved, unexpired zakat eligibility case."));
         }
 
         return Result.Success(new DecideZakatEligibilityResponse(

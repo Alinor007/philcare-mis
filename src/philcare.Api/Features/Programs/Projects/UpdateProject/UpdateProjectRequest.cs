@@ -2,8 +2,7 @@ namespace philcare.Api.Features.Programs.Projects.UpdateProject;
 
 public sealed record UpdateProjectRequest(
     string Name,
-    int? DonorId,
-    string? FundCode,
+    string? FundType,
     decimal TotalBudget,
     int? TargetBeneficiaries,
     DateTime? StartDate,
@@ -18,8 +17,7 @@ public sealed record UpdateProjectResponse(
     int Id,
     int ProgramId,
     string Name,
-    int? DonorId,
-    string? FundCode,
+    string? FundType,
     decimal TotalBudget,
     int? TargetBeneficiaries,
     DateTime? StartDate,

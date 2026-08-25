@@ -21,7 +21,7 @@ public sealed record MeetingDetailResponse(
     string Status,
     DateTime? PublicationDeadline,
     string? Notes,
-    int ParticipantCount,
+    int BeneficiaryCount,
     bool HasMinutes);
 
 public sealed class GetMeetingByIdEndpoint : IEndpoint
@@ -37,7 +37,7 @@ public sealed class GetMeetingByIdEndpoint : IEndpoint
                     m.ChairPersonId, m.ChairPerson == null ? null : m.ChairPerson.FullName,
                     m.SecretaryPersonId, m.SecretaryPerson == null ? null : m.SecretaryPerson.FullName,
                     m.QuorumRequired, m.DecisionThreshold, m.Status.ToString(), m.PublicationDeadline, m.Notes,
-                    m.Participants.Count, m.Minutes != null))
+                    m.Beneficiaries.Count, m.Minutes != null))
                 .FirstOrDefaultAsync(ct);
 
             if (meeting is null)

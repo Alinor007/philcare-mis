@@ -30,10 +30,10 @@ public sealed class GetActivityParticipantsEndpoint : IEndpoint
             }
 
             var roster = await query
-                .Include(ap => ap.StaffMember)
-                .OrderBy(ap => ap.StaffMember.FullName)
+                .Include(ap => ap.StaffMember).ThenInclude(s => s.Person)
+                .OrderBy(ap => ap.StaffMember.Person.FullName)
                 .Select(ap => new ActivityRosterRow(
-                    ap.StaffMemberId, ap.StaffMember.FullName, ap.StaffMember.Position, ap.RoleInActivity, ap.AttendanceStatus, ap.IsActive))
+                    ap.StaffMemberId, ap.StaffMember.Person.FullName, ap.StaffMember.Position, ap.RoleInActivity, ap.AttendanceStatus, ap.IsActive))
                 .ToListAsync(ct);
 
             return Results.Ok(roster);

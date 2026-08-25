@@ -7,7 +7,7 @@ public sealed class UpdateProjectValidator : AbstractValidator<UpdateProjectRequ
     public UpdateProjectValidator()
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
-        RuleFor(x => x.FundCode).MaximumLength(20);
+        RuleFor(x => x.FundType).MaximumLength(50);
         RuleFor(x => x.TotalBudget).GreaterThanOrEqualTo(0);
         RuleFor(x => x.TargetBeneficiaries).GreaterThan(0).When(x => x.TargetBeneficiaries is not null);
         RuleFor(x => x.Location).MaximumLength(200);

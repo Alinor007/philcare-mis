@@ -30,7 +30,7 @@ public sealed record ActivityDetailResponse(
     string? Notes,
     bool IsActive,
     // Staffing-roster size — ActivityParticipant links Activity to StaffMember, not beneficiaries.
-    int ParticipantCount,
+    int BeneficiaryCount,
     int DistributionCount,
     // Captured only by ChangeActivityStatus on the transition to COMPLETED — the closeout reach
     // and finish date. Null while the activity is still open.

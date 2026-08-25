@@ -28,6 +28,7 @@ public class DonationConfiguration : IEntityTypeConfiguration<Donation>
         builder.Property(d => d.ProgramOrProject).HasMaxLength(200);
         builder.Property(d => d.FundCode).IsRequired().HasMaxLength(20);
         builder.Property(d => d.ReceiptNo).HasMaxLength(100);
+        builder.Property(d => d.TransactionRef).HasMaxLength(100);
         builder.Property(d => d.CashDocumentationStatus).HasMaxLength(50);
         builder.Property(d => d.ComplianceCheck).HasMaxLength(200);
         builder.Property(d => d.ProgramBucketCode).HasMaxLength(20);
@@ -39,6 +40,14 @@ public class DonationConfiguration : IEntityTypeConfiguration<Donation>
         builder.Property(d => d.RiskRating).HasConversion<string>().HasMaxLength(20).IsRequired();
 
         builder.Property(d => d.IsVoided).HasDefaultValue(false);
+
+        // Server-assigned on create (CreateDonationHandler); NULLs don't collide, so historical
+        // rows recorded before this feature existed are unaffected.
+        builder.HasIndex(d => d.ReceiptNo).IsUnique();
+
+        // Non-unique: cheque numbers from different banks legitimately collide, and pre-existing
+        // rows are all NULL. Exists for reconciliation lookup, not enforcement.
+        builder.HasIndex(d => d.TransactionRef);
 
         builder.HasOne(d => d.Donor)
             .WithMany(don => don.Donations)

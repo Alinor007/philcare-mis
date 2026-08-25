@@ -1,4 +1,5 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.People.Domain;
 
 namespace philcare.Api.Features.Governance.Domain;
 

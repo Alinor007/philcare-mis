@@ -1,0 +1,104 @@
+[
+  {
+    "Code": "010000000",
+    "Name": "Ilocos Region",
+    "DesignationName": "Region I",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "020000000",
+    "Name": "Cagayan Valley",
+    "DesignationName": "Region II",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "030000000",
+    "Name": "Central Luzon",
+    "DesignationName": "Region III",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "040000000",
+    "Name": "CALABARZON",
+    "DesignationName": "Region IV-A",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "050000000",
+    "Name": "Bicol Region",
+    "DesignationName": "Region V",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "060000000",
+    "Name": "Western Visayas",
+    "DesignationName": "Region VI",
+    "IslandGroup": "visayas"
+  },
+  {
+    "Code": "070000000",
+    "Name": "Central Visayas",
+    "DesignationName": "Region VII",
+    "IslandGroup": "visayas"
+  },
+  {
+    "Code": "080000000",
+    "Name": "Eastern Visayas",
+    "DesignationName": "Region VIII",
+    "IslandGroup": "visayas"
+  },
+  {
+    "Code": "090000000",
+    "Name": "Zamboanga Peninsula",
+    "DesignationName": "Region IX",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "100000000",
+    "Name": "Northern Mindanao",
+    "DesignationName": "Region X",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "110000000",
+    "Name": "Davao Region",
+    "DesignationName": "Region XI",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "120000000",
+    "Name": "SOCCSKSARGEN",
+    "DesignationName": "Region XII",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "130000000",
+    "Name": "NCR",
+    "DesignationName": "National Capital Region",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "140000000",
+    "Name": "CAR",
+    "DesignationName": "Cordillera Administrative Region",
+    "IslandGroup": "luzon"
+  },
+  {
+    "Code": "150000000",
+    "Name": "BARMM",
+    "DesignationName": "Bangsamoro Autonomous Region in Muslim Mindanao",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "160000000",
+    "Name": "Caraga",
+    "DesignationName": "Region XIII",
+    "IslandGroup": "mindanao"
+  },
+  {
+    "Code": "170000000",
+    "Name": "MIMAROPA Region",
+    "DesignationName": "MIMAROPA Region",
+    "IslandGroup": "luzon"
+  }
+]

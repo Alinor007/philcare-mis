@@ -11,7 +11,7 @@ public sealed record CreateExpenseRequest(
     string Currency,
     decimal FxRateToPhp,
     string? ReceiptNo,
-    string? ApprovedBy,
+    int? ApprovedByPersonId,
     string? SupportingDocStatus,
     int? LinkedDonationId,
     string? ExpenseFunction,

@@ -24,6 +24,11 @@ public class Donation : Entity
 
     public string? ReceiptNo { get; set; }
 
+    // Donor-side payment reference (GCash ref, bank transfer no., cheque no.) — distinct from
+    // ReceiptNo, which is PhilCare's own server-assigned receipt number. Used for bank/statement
+    // reconciliation; officer-entered, not unique (different banks can reuse numbers).
+    public string? TransactionRef { get; set; }
+
     // Compliance / AML
     public string? CashDocumentationStatus { get; set; }
     public bool SourceVerified { get; set; }
@@ -47,4 +52,5 @@ public class Donation : Entity
     public bool IsVoided { get; set; }
 
     public List<Allocation> Allocations { get; set; } = [];
+    public List<OutboxEmail> OutboxEmails { get; set; } = [];
 }

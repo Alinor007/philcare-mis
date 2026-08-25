@@ -1,7 +1,7 @@
 namespace philcare.Api.Features.Zakat.CreateZakatEligibility;
 
 public sealed record CreateZakatEligibilityRequest(
-    int ParticipantId,
+    int BeneficiaryId,
     string AsnafCategory,
     decimal? MonthlyIncomePhp,
     int? HouseholdSize,
@@ -10,4 +10,4 @@ public sealed record CreateZakatEligibilityRequest(
     string? AssessmentNotes,
     string? Notes);
 
-public sealed record CreateZakatEligibilityResponse(int Id, int ParticipantId, string AsnafCategory, string Status);
+public sealed record CreateZakatEligibilityResponse(int Id, int BeneficiaryId, string AsnafCategory, string Status);

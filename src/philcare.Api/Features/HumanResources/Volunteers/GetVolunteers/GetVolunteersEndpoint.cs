@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using philcare.Api.Common.Api;
 using philcare.Api.Common.Persistence;
-using philcare.Api.Features.Programs.Domain;
+using philcare.Api.Common.Domain;
 
 namespace philcare.Api.Features.HumanResources.Volunteers.GetVolunteers;
 
 public sealed record VolunteerListItemResponse(
-    int Id, string FullName, Gender Gender, string Status, bool OrientationCompleted, bool IsActive);
+    int Id, int PersonId, string FullName, Gender Gender, string Status, bool OrientationCompleted, bool IsActive);
 
 public sealed class GetVolunteersEndpoint : IEndpoint
 {
@@ -33,8 +33,9 @@ public sealed class GetVolunteersEndpoint : IEndpoint
             }
 
             var volunteers = await query
-                .OrderBy(v => v.FullName)
-                .Select(v => new VolunteerListItemResponse(v.Id, v.FullName, v.Gender, v.Status, v.OrientationCompleted, v.IsActive))
+                .OrderBy(v => v.Person.FullName)
+                .Select(v => new VolunteerListItemResponse(
+                    v.Id, v.PersonId, v.Person.FullName, v.Person.Gender, v.Status, v.OrientationCompleted, v.IsActive))
                 .ToListAsync(ct);
 
             return Results.Ok(volunteers);

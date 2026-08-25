@@ -29,14 +29,14 @@ public sealed class GetMeetingQuorumEndpoint : IEndpoint
                 return Results.Problem(title: "Governance.MeetingNotFound", detail: "Meeting not found.", statusCode: StatusCodes.Status404NotFound);
             }
 
-            var participants = await db.MeetingParticipants
+            var beneficiaries = await db.MeetingParticipants
                 .Where(mp => mp.MeetingId == id)
                 .Select(mp => new { mp.CountsForQuorum, mp.AttendanceStatus })
                 .ToListAsync(ct);
 
-            var eligibleCount = participants.Count(p => p.CountsForQuorum);
-            var presentCount = participants.Count(p => p.AttendanceStatus == "PRESENT" || p.AttendanceStatus == "ONLINE_PRESENT");
-            var countsForQuorumPresentCount = participants.Count(
+            var eligibleCount = beneficiaries.Count(p => p.CountsForQuorum);
+            var presentCount = beneficiaries.Count(p => p.AttendanceStatus == "PRESENT" || p.AttendanceStatus == "ONLINE_PRESENT");
+            var countsForQuorumPresentCount = beneficiaries.Count(
                 p => p.CountsForQuorum && (p.AttendanceStatus == "PRESENT" || p.AttendanceStatus == "ONLINE_PRESENT"));
 
             double? presentPercentage = eligibleCount > 0 ? Math.Round(countsForQuorumPresentCount * 100.0 / eligibleCount, 1) : null;

@@ -6,20 +6,20 @@ using philcare.Api.Features.Zakat.Domain;
 namespace philcare.Api.Features.Zakat.GetZakatEligibilities;
 
 public sealed record ZakatEligibilityListItemResponse(
-    int Id, int ParticipantId, string ParticipantName, string AsnafCategory, ZakatEligibilityStatus Status, DateTime? ValidUntil);
+    int Id, int BeneficiaryId, string BeneficiaryName, string AsnafCategory, ZakatEligibilityStatus Status, DateTime? ValidUntil);
 
 public sealed class GetZakatEligibilitiesEndpoint : IEndpoint
 {
     public void Map(IEndpointRouteBuilder app)
     {
         app.MapGet("/api/zakat-eligibilities", async (
-            int? participantId, ZakatEligibilityStatus? status, string? asnaf, AppDbContext db, CancellationToken ct) =>
+            int? beneficiaryId, ZakatEligibilityStatus? status, string? asnaf, AppDbContext db, CancellationToken ct) =>
         {
-            var query = db.ZakatEligibilities.Include(z => z.Participant).AsQueryable();
+            var query = db.ZakatEligibilities.Include(z => z.Beneficiary).AsQueryable();
 
-            if (participantId is not null)
+            if (beneficiaryId is not null)
             {
-                query = query.Where(z => z.ParticipantId == participantId);
+                query = query.Where(z => z.BeneficiaryId == beneficiaryId);
             }
 
             if (status is not null)
@@ -35,7 +35,7 @@ public sealed class GetZakatEligibilitiesEndpoint : IEndpoint
             var eligibilities = await query
                 .OrderByDescending(z => z.AssessmentDate)
                 .Select(z => new ZakatEligibilityListItemResponse(
-                    z.Id, z.ParticipantId, z.Participant.FullName, z.AsnafCategory, z.Status, z.ValidUntil))
+                    z.Id, z.BeneficiaryId, z.Beneficiary.FullName, z.AsnafCategory, z.Status, z.ValidUntil))
                 .ToListAsync(ct);
 
             return Results.Ok(eligibilities);

@@ -8,4 +8,4 @@ public sealed record UpdateSponsorshipRequest(
     string? Notes);
 
 public sealed record UpdateSponsorshipResponse(
-    int Id, int DonorId, int ParticipantId, string SponsorshipType, decimal MonthlyAmountPhp, string Status);
+    int Id, int DonorId, int BeneficiaryId, string SponsorshipType, decimal MonthlyAmountPhp, string Status);

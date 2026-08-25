@@ -22,10 +22,10 @@ public sealed class GetActivityVolunteersEndpoint : IEndpoint
 
             var roster = await db.ActivityVolunteers
                 .Where(av => av.ActivityId == activityId)
-                .Include(av => av.Volunteer)
-                .OrderBy(av => av.Volunteer.FullName)
+                .Include(av => av.Volunteer).ThenInclude(v => v.Person)
+                .OrderBy(av => av.Volunteer.Person.FullName)
                 .Select(av => new ActivityVolunteerRosterRow(
-                    av.VolunteerId, av.Volunteer.FullName, av.RoleInActivity, av.AttendanceStatus, av.HoursServed))
+                    av.VolunteerId, av.Volunteer.Person.FullName, av.RoleInActivity, av.AttendanceStatus, av.HoursServed))
                 .ToListAsync(ct);
 
             return Results.Ok(roster);

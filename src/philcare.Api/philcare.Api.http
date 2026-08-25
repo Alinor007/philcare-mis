@@ -1,7 +1,7 @@
-@philcare.Api_HostAddress = http://localhost:5182
+@HostAddress = http://localhost:5182
 
 ### Login
-POST {{philcare.Api_HostAddress}}/api/auth/login
+POST {{HostAddress}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -10,37 +10,37 @@ Content-Type: application/json
 }
 
 ### Get current user (replace {{token}} with the accessToken from login)
-GET {{philcare.Api_HostAddress}}/api/auth/me
+GET {{HostAddress}}/api/auth/me
 Authorization: Bearer {{token}}
 
 ### Get all lookups
-GET {{philcare.Api_HostAddress}}/api/lookups
+GET {{HostAddress}}/api/lookups
 Authorization: Bearer {{token}}
 
 ### Get lookups by category
-GET {{philcare.Api_HostAddress}}/api/lookups/fund_type
+GET {{HostAddress}}/api/lookups/fund_type
 Authorization: Bearer {{token}}
 
 ### --- Finance module ---
 
 ### List funds (master: ZAKA-FUND, SADA-FUND, GENE-FUND, REST-FUND, OPER-FUND, CAPX-FUND)
-GET {{philcare.Api_HostAddress}}/api/funds
+GET {{HostAddress}}/api/funds
 Authorization: Bearer {{token}}
 
 ### List funding buckets (live balances)
-GET {{philcare.Api_HostAddress}}/api/funding-buckets
+GET {{HostAddress}}/api/funding-buckets
 Authorization: Bearer {{token}}
 
 ### List funding buckets for one fund
-GET {{philcare.Api_HostAddress}}/api/funding-buckets?fundCode=ZAKA-FUND
+GET {{HostAddress}}/api/funding-buckets?fundCode=ZAKA-FUND
 Authorization: Bearer {{token}}
 
 ### Get funding bucket detail (replace {{bucketId}})
-GET {{philcare.Api_HostAddress}}/api/funding-buckets/{{bucketId}}
+GET {{HostAddress}}/api/funding-buckets/{{bucketId}}
 Authorization: Bearer {{token}}
 
 ### Create donor (with KYD/AML fields)
-POST {{philcare.Api_HostAddress}}/api/donors
+POST {{HostAddress}}/api/donors
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -55,15 +55,15 @@ Content-Type: application/json
 }
 
 ### List donors
-GET {{philcare.Api_HostAddress}}/api/donors
+GET {{HostAddress}}/api/donors
 Authorization: Bearer {{token}}
 
 ### Get donor detail (replace {{donorId}})
-GET {{philcare.Api_HostAddress}}/api/donors/{{donorId}}
+GET {{HostAddress}}/api/donors/{{donorId}}
 Authorization: Bearer {{token}}
 
 ### Update donor (e.g. clear KYD after review)
-PUT {{philcare.Api_HostAddress}}/api/donors/{{donorId}}
+PUT {{HostAddress}}/api/donors/{{donorId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -80,7 +80,7 @@ Content-Type: application/json
 }
 
 ### Create zakat donation — auto-splits into ZAK-PROG (program) + ZAK-AMIL (12.5% cap)
-POST {{philcare.Api_HostAddress}}/api/donations
+POST {{HostAddress}}/api/donations
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -97,7 +97,7 @@ Content-Type: application/json
 }
 
 ### Create foreign-currency general donation — auto-converts to PHP, splits program/admin (cap 15%)
-POST {{philcare.Api_HostAddress}}/api/donations
+POST {{HostAddress}}/api/donations
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -114,19 +114,19 @@ Content-Type: application/json
 }
 
 ### List donations (filters: donorId, fundCode, from, to, includeVoided)
-GET {{philcare.Api_HostAddress}}/api/donations
+GET {{HostAddress}}/api/donations
 Authorization: Bearer {{token}}
 
 ### Get donation detail incl. allocation lines (replace {{donationId}})
-GET {{philcare.Api_HostAddress}}/api/donations/{{donationId}}
+GET {{HostAddress}}/api/donations/{{donationId}}
 Authorization: Bearer {{token}}
 
 ### Void donation (Admin only; blocked if its funds are already spent)
-DELETE {{philcare.Api_HostAddress}}/api/donations/{{donationId}}
+DELETE {{HostAddress}}/api/donations/{{donationId}}
 Authorization: Bearer {{token}}
 
 ### Create zakat expense (requires zakatAsnaf + beneficiaryCount against ZAK-PROG)
-POST {{philcare.Api_HostAddress}}/api/expenses
+POST {{HostAddress}}/api/expenses
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -145,40 +145,40 @@ Content-Type: application/json
 }
 
 ### List expenses (filters: fundingBucketCode, expenseCategory, from, to, includeVoided)
-GET {{philcare.Api_HostAddress}}/api/expenses
+GET {{HostAddress}}/api/expenses
 Authorization: Bearer {{token}}
 
 ### Get expense detail (replace {{expenseId}})
-GET {{philcare.Api_HostAddress}}/api/expenses/{{expenseId}}
+GET {{HostAddress}}/api/expenses/{{expenseId}}
 Authorization: Bearer {{token}}
 
 ### Void expense (Admin only; restores bucket balance)
-DELETE {{philcare.Api_HostAddress}}/api/expenses/{{expenseId}}
+DELETE {{HostAddress}}/api/expenses/{{expenseId}}
 Authorization: Bearer {{token}}
 
 ### Fund summary report — every bucket's allocated/expensed/remaining + overall admin ratio
-GET {{philcare.Api_HostAddress}}/api/reports/fund-summary
+GET {{HostAddress}}/api/reports/fund-summary
 Authorization: Bearer {{token}}
 
 ### Admin recovery control report — per admin/amil bucket cap vs allocated vs expensed
-GET {{philcare.Api_HostAddress}}/api/reports/admin-recovery
+GET {{HostAddress}}/api/reports/admin-recovery
 Authorization: Bearer {{token}}
 
 ### Zakat & Amil control report
-GET {{philcare.Api_HostAddress}}/api/reports/zakat-amil
+GET {{HostAddress}}/api/reports/zakat-amil
 Authorization: Bearer {{token}}
 
 ### Zakat asnaf report — amounts + beneficiary counts by the 8 asnaf categories
-GET {{philcare.Api_HostAddress}}/api/reports/zakat-asnaf
+GET {{HostAddress}}/api/reports/zakat-asnaf
 Authorization: Bearer {{token}}
 
 ### Donor utilization report (replace {{donorId}})
-GET {{philcare.Api_HostAddress}}/api/reports/donor-utilization/{{donorId}}
+GET {{HostAddress}}/api/reports/donor-utilization/{{donorId}}
 Authorization: Bearer {{token}}
 
 ### Restricted fund ledger — opening balance + movements for ZAKA-FUND / REST-FUND / CAPX-FUND
 ### (income allocations now appear as "INC-{id}"; donations as "DON-{id}")
-GET {{philcare.Api_HostAddress}}/api/reports/restricted-ledger?year=2026
+GET {{HostAddress}}/api/reports/restricted-ledger?year=2026
 Authorization: Bearer {{token}}
 
 ### --- Other Income module (Sprint 4) ---
@@ -187,7 +187,7 @@ Authorization: Bearer {{token}}
 ### program/admin split. Cannot target a zakat fund bucket (zakat money enters only via donations).
 
 ### Record capital income (rental/investment/asset returns) into the Capital fund bucket
-POST {{philcare.Api_HostAddress}}/api/other-income
+POST {{HostAddress}}/api/other-income
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -203,7 +203,7 @@ Content-Type: application/json
 }
 
 ### Example: targeting a zakat bucket is rejected (400 OtherIncome.ZakatFundNotAllowed)
-# POST {{philcare.Api_HostAddress}}/api/other-income
+# POST {{HostAddress}}/api/other-income
 # Authorization: Bearer {{token}}
 # Content-Type: application/json
 #
@@ -218,25 +218,25 @@ Content-Type: application/json
 # }
 
 ### List other income (filters: incomeType, fundingBucketCode, from, to, includeVoided)
-GET {{philcare.Api_HostAddress}}/api/other-income
+GET {{HostAddress}}/api/other-income
 Authorization: Bearer {{token}}
 
 ### Get other income detail incl. allocation line (replace {{incomeId}})
-GET {{philcare.Api_HostAddress}}/api/other-income/{{incomeId}}
+GET {{HostAddress}}/api/other-income/{{incomeId}}
 Authorization: Bearer {{token}}
 
 ### Void other income (Admin only; blocked if its bucket's funds are already spent)
-DELETE {{philcare.Api_HostAddress}}/api/other-income/{{incomeId}}
+DELETE {{HostAddress}}/api/other-income/{{incomeId}}
 Authorization: Bearer {{token}}
 
 ### Income summary report — total by income_type (optional ?year=)
-GET {{philcare.Api_HostAddress}}/api/reports/income-summary?year=2026
+GET {{HostAddress}}/api/reports/income-summary?year=2026
 Authorization: Bearer {{token}}
 
 ### --- Programs module ---
 
 ### Create program
-POST {{philcare.Api_HostAddress}}/api/programs
+POST {{HostAddress}}/api/programs
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -247,33 +247,46 @@ Content-Type: application/json
 }
 
 ### List programs
-GET {{philcare.Api_HostAddress}}/api/programs
+GET {{HostAddress}}/api/programs
 Authorization: Bearer {{token}}
 
 ### Get program detail (replace {{programId}})
-GET {{philcare.Api_HostAddress}}/api/programs/{{programId}}
+GET {{HostAddress}}/api/programs/{{programId}}
 Authorization: Bearer {{token}}
 
-### Create project under a program
-POST {{philcare.Api_HostAddress}}/api/projects
+### Create project under a program (fundType instead of a direct fund/donor link — see project_fund_type lookup)
+POST {{HostAddress}}/api/projects
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "programId": 1,
   "name": "2026 Flood Response",
-  "fundCode": "REST-FUND",
+  "fundType": "INTERNAL_FUND",
   "totalBudget": 500000,
   "targetBeneficiaries": 2000,
   "location": "Marikina City"
 }
 
 ### List projects (filters: programId, implementationStatus, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/projects
+GET {{HostAddress}}/api/projects
+Authorization: Bearer {{token}}
+
+### Add a donor to a project (a project can have several)
+POST {{HostAddress}}/api/projects/{{projectId}}/donors
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "donorId": 1
+}
+
+### List a project's donors
+GET {{HostAddress}}/api/projects/{{projectId}}/donors
 Authorization: Bearer {{token}}
 
 ### Create activity under a project
-POST {{philcare.Api_HostAddress}}/api/activities
+POST {{HostAddress}}/api/activities
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -287,78 +300,90 @@ Content-Type: application/json
 }
 
 ### List activities (filters: projectId, implementationStatus, from, to)
-GET {{philcare.Api_HostAddress}}/api/activities
+GET {{HostAddress}}/api/activities
 Authorization: Bearer {{token}}
 
-### Create participant (beneficiary)
-POST {{philcare.Api_HostAddress}}/api/participants
+### Register a beneficiary
+POST {{HostAddress}}/api/beneficiaries
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "fullName": "Juan Dela Cruz",
-  "participantType": "BENEFICIARY",
+  "beneficiaryType": "INDIVIDUAL",
   "gender": "Male",
-  "ageGroup": "ADULT",
-  "vulnerabilityCategory": "POOR",
+  "vulnerabilityCategory": "PWD",
   "consentOnFile": true
 }
 
-### List participants (filters: participantType, status, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/participants
+### List beneficiaries (filters: beneficiaryType, status, includeInactive)
+GET {{HostAddress}}/api/beneficiaries
 Authorization: Bearer {{token}}
 
-### Enroll a participant into an activity (replace {{activityId}})
-POST {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/participants
+### Add a staff member to an activity's roster (replace {{activityId}})
+POST {{HostAddress}}/api/activities/{{activityId}}/participants
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "participantId": 1,
-  "roleInActivity": "Recipient",
-  "attendanceStatus": "Present",
-  "consentRequired": false
+  "staffMemberId": 1,
+  "roleInActivity": "Facilitator",
+  "attendanceStatus": "PRESENT"
 }
 
-### Get activity roster
-GET {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/participants
+### Get activity staff roster
+GET {{HostAddress}}/api/activities/{{activityId}}/participants
 Authorization: Bearer {{token}}
 
-### Create distribution linked to Finance zakat program bucket
-### (requires an Approved, unexpired zakat eligibility for the participant — see Zakat Eligibility section below;
-### zakatAsnaf may be omitted and is auto-filled from the approved case, or must match it if provided)
-POST {{philcare.Api_HostAddress}}/api/distributions
+### Create distribution — no beneficiary at creation; recipients are added afterwards via the roster
+### (see the two requests below). Zakat asnaf is required up front for a zakat program bucket.
+POST {{HostAddress}}/api/distributions
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "distributionType": "CASH_ASSISTANCE",
-  "participantId": 1,
   "activityId": 1,
   "fundingBucketCode": "ZAK-PROG",
   "quantity": 1,
-  "totalValuePhp": 1000,
+  "unitValuePhp": 1000,
+  "zakatAsnaf": "FUQARA",
   "distributionDate": "2026-07-20T00:00:00Z",
   "fieldVerified": true,
   "receivedConfirmation": true
 }
 
-### List distributions (filters: participantId, activityId, distributionType, from, to, includeVoided)
-GET {{philcare.Api_HostAddress}}/api/distributions
+### Add a beneficiary to a distribution's reach roster (replace {{distributionId}}; for a zakat
+### program bucket the beneficiary needs an approved, unexpired eligibility matching the asnaf above)
+POST {{HostAddress}}/api/distributions/{{distributionId}}/beneficiaries
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "beneficiaryId": 1,
+  "receivedConfirmation": true
+}
+
+### Get a distribution's reach roster
+GET {{HostAddress}}/api/distributions/{{distributionId}}/beneficiaries
+Authorization: Bearer {{token}}
+
+### List distributions (filters: beneficiaryId, activityId, distributionType, from, to, includeVoided)
+GET {{HostAddress}}/api/distributions
 Authorization: Bearer {{token}}
 
 ### Program summary report
-GET {{philcare.Api_HostAddress}}/api/reports/program-summary
+GET {{HostAddress}}/api/reports/program-summary
 Authorization: Bearer {{token}}
 
 ### Distribution summary report
-GET {{philcare.Api_HostAddress}}/api/reports/distribution-summary
+GET {{HostAddress}}/api/reports/distribution-summary
 Authorization: Bearer {{token}}
 
 ### --- Partners module (Sprint 4) ---
 
 ### Create partner
-POST {{philcare.Api_HostAddress}}/api/partners
+POST {{HostAddress}}/api/partners
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -371,15 +396,15 @@ Content-Type: application/json
 }
 
 ### List partners (filters: partnerType, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/partners
+GET {{HostAddress}}/api/partners
 Authorization: Bearer {{token}}
 
 ### Get partner detail (replace {{partnerId}})
-GET {{philcare.Api_HostAddress}}/api/partners/{{partnerId}}
+GET {{HostAddress}}/api/partners/{{partnerId}}
 Authorization: Bearer {{token}}
 
 ### Link an activity to a partner (replace projectId/implementingPartnerId as needed)
-POST {{philcare.Api_HostAddress}}/api/activities
+POST {{HostAddress}}/api/activities
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -393,20 +418,83 @@ Content-Type: application/json
 }
 
 ### Deactivate partner (Admin only)
-DELETE {{philcare.Api_HostAddress}}/api/partners/{{partnerId}}
+DELETE {{HostAddress}}/api/partners/{{partnerId}}
 Authorization: Bearer {{token}}
 
-### --- Volunteers module (Sprint 4) ---
+### --- People module ---
+### Person is the shared identity for Staff, Volunteer and Membership profiles — see the
+### Staff/Volunteers/Memberships sections below, and Governance for Assignments.
 
-### Create volunteer
-POST {{philcare.Api_HostAddress}}/api/volunteers
+### Create person
+POST {{HostAddress}}/api/governance/people
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "fullName": "Maria Santos",
+  "personCategory": "MEMBER",
   "gender": "Female",
-  "phone": "09171234567",
+  "contactNumber": "09171234567",
+  "defaultVotingRights": false
+}
+
+### List people (filters: personCategory, status, includeInactive)
+GET {{HostAddress}}/api/governance/people
+Authorization: Bearer {{token}}
+
+### Get person detail (replace {{personId}})
+GET {{HostAddress}}/api/governance/people/{{personId}}
+Authorization: Bearer {{token}}
+
+### Registering the same person again is a soft-warn — expect 409 Beneficiaries.PossibleDuplicate,
+### then retry with confirmDuplicate: true
+# POST {{HostAddress}}/api/governance/people
+# Authorization: Bearer {{token}}
+# Content-Type: application/json
+#
+# { "fullName": "Maria Santos", "personCategory": "MEMBER", "gender": "Female", "contactNumber": "09171234567", "defaultVotingRights": false, "confirmDuplicate": true }
+
+### Deactivate person (Admin only)
+DELETE {{HostAddress}}/api/governance/people/{{personId}}
+Authorization: Bearer {{token}}
+
+### --- Staff module ---
+### A staff profile attaches to an existing Person — identity (name/contact/photo) lives there.
+
+### Add a staff profile (replace {{personId}})
+POST {{HostAddress}}/api/staff
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "personId": 1,
+  "position": "Program Officer",
+  "department": "HUMANITARIAN_PROGRAMS_DEPARTMENT",
+  "employmentType": "FULL_TIME"
+}
+
+### List staff (filters: department, employmentType, search, includeInactive)
+GET {{HostAddress}}/api/staff
+Authorization: Bearer {{token}}
+
+### Get staff detail (replace {{staffId}})
+GET {{HostAddress}}/api/staff/{{staffId}}
+Authorization: Bearer {{token}}
+
+### Deactivate staff member (Admin only)
+DELETE {{HostAddress}}/api/staff/{{staffId}}
+Authorization: Bearer {{token}}
+
+### --- Volunteers module ---
+### A volunteer profile likewise attaches to an existing Person.
+
+### Add a volunteer profile (replace {{personId}})
+POST {{HostAddress}}/api/volunteers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "personId": 1,
   "orientationCompleted": true,
   "orientationDate": "2026-06-01T00:00:00Z",
   "codeOfConductSigned": true,
@@ -415,16 +503,16 @@ Content-Type: application/json
 }
 
 ### List volunteers (filters: status, orientationCompleted, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/volunteers
+GET {{HostAddress}}/api/volunteers
 Authorization: Bearer {{token}}
 
 ### Get volunteer detail (replace {{volunteerId}})
-GET {{philcare.Api_HostAddress}}/api/volunteers/{{volunteerId}}
+GET {{HostAddress}}/api/volunteers/{{volunteerId}}
 Authorization: Bearer {{token}}
 
 ### Enroll a volunteer into an activity (blocked with 400 if the activity has a SafeguardingRisk
 ### and the volunteer's OrientationCompleted is false — replace {{activityId}})
-POST {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/volunteers
+POST {{HostAddress}}/api/activities/{{activityId}}/volunteers
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -434,39 +522,39 @@ Content-Type: application/json
 }
 
 ### Get activity volunteer roster
-GET {{philcare.Api_HostAddress}}/api/activities/{{activityId}}/volunteers
+GET {{HostAddress}}/api/activities/{{activityId}}/volunteers
 Authorization: Bearer {{token}}
 
 ### Deactivate volunteer (Admin only)
-DELETE {{philcare.Api_HostAddress}}/api/volunteers/{{volunteerId}}
+DELETE {{HostAddress}}/api/volunteers/{{volunteerId}}
 Authorization: Bearer {{token}}
 
 ### --- Sponsorships module (Sprint 4) ---
 
-### Create sponsorship pledge (Donor from Finance + Participant from Programs)
-POST {{philcare.Api_HostAddress}}/api/sponsorships
+### Create sponsorship pledge (Donor from Finance + Beneficiary from Programs)
+POST {{HostAddress}}/api/sponsorships
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "donorId": 1,
-  "participantId": 1,
+  "beneficiaryId": 1,
   "sponsorshipType": "CHILD",
   "monthlyAmountPhp": 1500,
   "startDate": "2026-07-01T00:00:00Z",
   "caseWorker": "Aisha Rahman"
 }
 
-### List sponsorships (filters: donorId, participantId, status, sponsorshipType)
-GET {{philcare.Api_HostAddress}}/api/sponsorships
+### List sponsorships (filters: donorId, beneficiaryId, status, sponsorshipType)
+GET {{HostAddress}}/api/sponsorships
 Authorization: Bearer {{token}}
 
 ### Get sponsorship detail (replace {{sponsorshipId}})
-GET {{philcare.Api_HostAddress}}/api/sponsorships/{{sponsorshipId}}
+GET {{HostAddress}}/api/sponsorships/{{sponsorshipId}}
 Authorization: Bearer {{token}}
 
 ### Change sponsorship status (Active -> Paused / Ended, Paused -> Active / Ended)
-POST {{philcare.Api_HostAddress}}/api/sponsorships/{{sponsorshipId}}/status
+POST {{HostAddress}}/api/sponsorships/{{sponsorshipId}}/status
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -475,18 +563,18 @@ Content-Type: application/json
 }
 
 ### Sponsorship summary report
-GET {{philcare.Api_HostAddress}}/api/reports/sponsorship-summary
+GET {{HostAddress}}/api/reports/sponsorship-summary
 Authorization: Bearer {{token}}
 
 ### --- Zakat Eligibility workflow (Sprint 4) ---
 
 ### Create zakat eligibility case (starts as Draft)
-POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities
+POST {{HostAddress}}/api/zakat-eligibilities
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "participantId": 1,
+  "beneficiaryId": 1,
   "asnafCategory": "FUQARA",
   "monthlyIncomePhp": 3000,
   "householdSize": 4,
@@ -494,20 +582,20 @@ Content-Type: application/json
   "assessedBy": "Case Worker A"
 }
 
-### List zakat eligibility cases (filters: participantId, status, asnaf)
-GET {{philcare.Api_HostAddress}}/api/zakat-eligibilities
+### List zakat eligibility cases (filters: beneficiaryId, status, asnaf)
+GET {{HostAddress}}/api/zakat-eligibilities
 Authorization: Bearer {{token}}
 
 ### Get zakat eligibility detail (replace {{eligibilityId}})
-GET {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}
+GET {{HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}
 Authorization: Bearer {{token}}
 
 ### Submit case for approval (Draft -> Submitted)
-POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/submit
+POST {{HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/submit
 Authorization: Bearer {{token}}
 
 ### Approve case (Admin only; ValidUntil defaults to +12 months if omitted)
-POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
+POST {{HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -518,7 +606,7 @@ Content-Type: application/json
 }
 
 ### Reject case (Admin only; rejectionReason required)
-POST {{philcare.Api_HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
+POST {{HostAddress}}/api/zakat-eligibilities/{{eligibilityId}}/decision
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -533,7 +621,7 @@ Content-Type: application/json
 ### separate entities — they are derived from Assignments; see GET .../bodies/{id}/members below.
 
 ### Create org body (top of the hierarchy — General Assembly)
-POST {{philcare.Api_HostAddress}}/api/governance/bodies
+POST {{HostAddress}}/api/governance/bodies
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -547,7 +635,7 @@ Content-Type: application/json
 }
 
 ### Create child org body (Board of Trustees, reporting to the General Assembly — replace parentBodyId)
-POST {{philcare.Api_HostAddress}}/api/governance/bodies
+POST {{HostAddress}}/api/governance/bodies
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -562,7 +650,7 @@ Content-Type: application/json
 }
 
 ### Rejected: a body cannot be made its own ancestor (uncomment and adjust ids to try)
-# PUT {{philcare.Api_HostAddress}}/api/governance/bodies/1
+# PUT {{HostAddress}}/api/governance/bodies/1
 # Authorization: Bearer {{token}}
 # Content-Type: application/json
 #
@@ -570,51 +658,27 @@ Content-Type: application/json
 # --> 400 Governance.CircularBodyHierarchy (body 2's parent is body 1)
 
 ### List org bodies (filters: bodyType, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/governance/bodies
+GET {{HostAddress}}/api/governance/bodies
 Authorization: Bearer {{token}}
 
 ### Get org body detail (child bodies + current member count; replace {{bodyId}})
-GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}
+GET {{HostAddress}}/api/governance/bodies/{{bodyId}}
 Authorization: Bearer {{token}}
 
 ### Get the body's current roster — THIS is "board trustees" / "executive team", derived from Assignments
-GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}/members
+GET {{HostAddress}}/api/governance/bodies/{{bodyId}}/members
 Authorization: Bearer {{token}}
 
 ### Same roster including former (ended) assignments
-GET {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}/members?includeFormer=true
+GET {{HostAddress}}/api/governance/bodies/{{bodyId}}/members?includeFormer=true
 Authorization: Bearer {{token}}
 
 ### Deactivate org body (Admin only; 409 if it has active child bodies or current assignments)
-DELETE {{philcare.Api_HostAddress}}/api/governance/bodies/{{bodyId}}
-Authorization: Bearer {{token}}
-
-### Create person
-POST {{philcare.Api_HostAddress}}/api/governance/people
-Authorization: Bearer {{token}}
-Content-Type: application/json
-
-{
-  "fullName": "Jamal Perosalim Tanduc",
-  "personCategory": "BOARD",
-  "email": "jamaltanduc@example.local",
-  "defaultVotingRights": true
-}
-
-### List people (filters: personCategory, status, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/governance/people
-Authorization: Bearer {{token}}
-
-### Get person detail (replace {{personId}})
-GET {{philcare.Api_HostAddress}}/api/governance/people/{{personId}}
-Authorization: Bearer {{token}}
-
-### Deactivate person (Admin only)
-DELETE {{philcare.Api_HostAddress}}/api/governance/people/{{personId}}
+DELETE {{HostAddress}}/api/governance/bodies/{{bodyId}}
 Authorization: Bearer {{token}}
 
 ### Create governance role
-POST {{philcare.Api_HostAddress}}/api/governance/roles
+POST {{HostAddress}}/api/governance/roles
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -627,11 +691,11 @@ Content-Type: application/json
 }
 
 ### List governance roles (filter: roleCategory, includeInactive)
-GET {{philcare.Api_HostAddress}}/api/governance/roles
+GET {{HostAddress}}/api/governance/roles
 Authorization: Bearer {{token}}
 
 ### Create assignment (person holds a role in a body — replace ids)
-POST {{philcare.Api_HostAddress}}/api/governance/assignments
+POST {{HostAddress}}/api/governance/assignments
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -647,7 +711,7 @@ Content-Type: application/json
 }
 
 ### Rejected: a person cannot hold two primary Current assignments at once (uncomment to try)
-# POST {{philcare.Api_HostAddress}}/api/governance/assignments
+# POST {{HostAddress}}/api/governance/assignments
 # Authorization: Bearer {{token}}
 # Content-Type: application/json
 #
@@ -655,18 +719,18 @@ Content-Type: application/json
 # --> 409 Governance.DuplicatePrimaryAssignment
 
 ### List assignments (filters: personId, bodyId, roleId, status)
-GET {{philcare.Api_HostAddress}}/api/governance/assignments
+GET {{HostAddress}}/api/governance/assignments
 Authorization: Bearer {{token}}
 
 ### End an assignment (Admin only; endDate optional, defaults to today)
-POST {{philcare.Api_HostAddress}}/api/governance/assignments/{{assignmentId}}/end
+POST {{HostAddress}}/api/governance/assignments/{{assignmentId}}/end
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {}
 
 ### Create meeting (quorumRequired/decisionThreshold are snapshot-copied from the body automatically)
-POST {{philcare.Api_HostAddress}}/api/governance/meetings
+POST {{HostAddress}}/api/governance/meetings
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -680,15 +744,15 @@ Content-Type: application/json
 }
 
 ### List meetings (filters: bodyId, meetingType, status, from, to)
-GET {{philcare.Api_HostAddress}}/api/governance/meetings
+GET {{HostAddress}}/api/governance/meetings
 Authorization: Bearer {{token}}
 
 ### Get meeting detail (replace {{meetingId}})
-GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}
+GET {{HostAddress}}/api/governance/meetings/{{meetingId}}
 Authorization: Bearer {{token}}
 
 ### Mark a meeting Held (required before minutes can be recorded)
-PUT {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}
+PUT {{HostAddress}}/api/governance/meetings/{{meetingId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -700,7 +764,7 @@ Content-Type: application/json
 }
 
 ### Add a meeting participant
-POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/participants
+POST {{HostAddress}}/api/governance/meetings/{{meetingId}}/participants
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -712,15 +776,15 @@ Content-Type: application/json
 }
 
 ### Get meeting roster
-GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/participants
+GET {{HostAddress}}/api/governance/meetings/{{meetingId}}/participants
 Authorization: Bearer {{token}}
 
 ### Get quorum count — reports numbers alongside the snapshotted policy rule, does not evaluate it
-GET {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/quorum
+GET {{HostAddress}}/api/governance/meetings/{{meetingId}}/quorum
 Authorization: Bearer {{token}}
 
 ### Create minutes (meeting must be Held; one set of minutes per meeting)
-POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+POST {{HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -731,7 +795,7 @@ Content-Type: application/json
 }
 
 ### Rejected: minutes on a meeting that hasn't been held yet (uncomment to try against a Scheduled meeting)
-# POST {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+# POST {{HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
 # Authorization: Bearer {{token}}
 # Content-Type: application/json
 #
@@ -739,7 +803,7 @@ Content-Type: application/json
 # --> 400 Governance.MeetingNotHeld
 
 ### Add a decision to the minutes (replace {{minutesId}})
-POST {{philcare.Api_HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
+POST {{HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -750,11 +814,11 @@ Content-Type: application/json
 }
 
 ### List decisions for a minutes record
-GET {{philcare.Api_HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
+GET {{HostAddress}}/api/governance/minutes/{{minutesId}}/decisions
 Authorization: Bearer {{token}}
 
 ### Publish minutes (locks minutes AND its decisions from further edits)
-PUT {{philcare.Api_HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
+PUT {{HostAddress}}/api/governance/meetings/{{meetingId}}/minutes
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -764,7 +828,7 @@ Content-Type: application/json
 }
 
 ### Governance summary report (filters: from, to — date range on meetings held)
-GET {{philcare.Api_HostAddress}}/api/reports/governance-summary
+GET {{HostAddress}}/api/reports/governance-summary
 Authorization: Bearer {{token}}
 
 ###

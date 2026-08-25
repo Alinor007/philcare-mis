@@ -15,13 +15,13 @@ public sealed class UpdateActivityParticipantHandler(AppDbContext db)
         int activityId, int staffMemberId, UpdateActivityParticipantRequest request, CancellationToken cancellationToken)
     {
         var link = await db.ActivityParticipants
-            .Include(ap => ap.StaffMember)
+            .Include(ap => ap.StaffMember).ThenInclude(s => s.Person)
             .FirstOrDefaultAsync(ap => ap.ActivityId == activityId && ap.StaffMemberId == staffMemberId && ap.IsActive, cancellationToken);
 
         if (link is null)
         {
             return Result.Failure<UpdateActivityParticipantResponse>(
-                Error.NotFound("ActivityParticipants.NotFound", "This participant is not enrolled in this activity."));
+                Error.NotFound("ActivityParticipants.NotFound", "This beneficiary is not enrolled in this activity."));
         }
 
         if (!string.IsNullOrWhiteSpace(request.AttendanceStatus))
@@ -48,6 +48,6 @@ public sealed class UpdateActivityParticipantHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateActivityParticipantResponse(
-            link.Id, link.ActivityId, link.StaffMemberId, link.StaffMember.FullName, link.RoleInActivity, link.AttendanceStatus));
+            link.Id, link.ActivityId, link.StaffMemberId, link.StaffMember.Person.FullName, link.RoleInActivity, link.AttendanceStatus));
     }
 }

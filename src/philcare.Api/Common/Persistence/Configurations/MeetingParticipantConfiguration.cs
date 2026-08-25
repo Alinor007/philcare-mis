@@ -20,7 +20,7 @@ public class MeetingParticipantConfiguration : IEntityTypeConfiguration<MeetingP
         builder.HasIndex(mp => new { mp.MeetingId, mp.PersonId }).IsUnique();
 
         builder.HasOne(mp => mp.Meeting)
-            .WithMany(m => m.Participants)
+            .WithMany(m => m.Beneficiaries)
             .HasForeignKey(mp => mp.MeetingId)
             .OnDelete(DeleteBehavior.Restrict);
 

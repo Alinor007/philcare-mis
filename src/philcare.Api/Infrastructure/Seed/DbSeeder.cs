@@ -5,6 +5,7 @@ using philcare.Api.Features.Auth.Domain;
 using philcare.Api.Features.Auth.Services;
 using philcare.Api.Features.Finance.Domain;
 using philcare.Api.Features.ReferenceData.Domain;
+using philcare.Api.Features.ReferenceData.Geography.Domain;
 
 namespace philcare.Api.Infrastructure.Seed;
 
@@ -42,6 +43,12 @@ public sealed record OpeningBalanceSeedRow(int Year, string FundCode, string Cur
 
 public sealed record FinanceSeedData(List<FundSeedRow> Funds, List<BucketSeedRow> Buckets, List<OpeningBalanceSeedRow> OpeningBalances);
 
+public sealed record RegionSeedRow(string Code, string Name, string DesignationName, string IslandGroup);
+
+public sealed record ProvinceSeedRow(string Code, string Name, string RegionCode);
+
+public sealed record CityMunicipalitySeedRow(string Code, string Name, bool IsCity, bool IsCapital, string? ProvinceCode, string RegionCode);
+
 public sealed class DbSeeder(
     AppDbContext db,
     IPasswordHasher passwordHasher,
@@ -58,6 +65,7 @@ public sealed class DbSeeder(
         await SeedUsersAsync(cancellationToken);
         await SeedLookupsAsync(cancellationToken);
         await SeedFinanceAsync(cancellationToken);
+        await SeedGeographyAsync(cancellationToken);
     }
 
     private async Task SeedUsersAsync(CancellationToken cancellationToken)
@@ -271,5 +279,79 @@ public sealed class DbSeeder(
         logger.LogInformation(
             "Seeded {Funds} funds, {Buckets} funding buckets, {OpeningBalances} opening balances",
             data.Funds.Count, data.Buckets.Count, data.OpeningBalances.Count);
+    }
+
+    /// <summary>
+    /// The real PSGC (Philippine Standard Geographic Code) Region → Province → City/Municipality
+    /// hierarchy — 17 regions, 81 provinces, 1,634 cities/municipalities, sourced from the
+    /// official PSGC publication. Seeds once, like Finance: this is a closed, versioned dataset
+    /// with no admin-edit path, not an open vocabulary that grows sprint over sprint the way
+    /// LookupItem's categories do, so there is no per-row reconciliation pass — only ever
+    /// inserted if the table is empty.
+    /// </summary>
+    private async Task SeedGeographyAsync(CancellationToken cancellationToken)
+    {
+        if (await db.Regions.AnyAsync(cancellationToken))
+        {
+            return;
+        }
+
+        var seedDir = Path.Combine(AppContext.BaseDirectory, "Infrastructure", "Seed");
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        var regions = await ReadGeographySeedAsync<RegionSeedRow>(Path.Combine(seedDir, "regions-seed.json"), jsonOptions, cancellationToken);
+        var provinces = await ReadGeographySeedAsync<ProvinceSeedRow>(Path.Combine(seedDir, "provinces-seed.json"), jsonOptions, cancellationToken);
+        var cities = await ReadGeographySeedAsync<CityMunicipalitySeedRow>(Path.Combine(seedDir, "cities-seed.json"), jsonOptions, cancellationToken);
+
+        if (regions is null || provinces is null || cities is null)
+        {
+            return;
+        }
+
+        // Parents before children — Province/CityMunicipality FK to Region.Code (and
+        // CityMunicipality optionally to Province.Code) must already exist when SaveChanges runs.
+        db.Regions.AddRange(regions.Select(r => new Region
+        {
+            Code = r.Code,
+            Name = r.Name,
+            DesignationName = r.DesignationName,
+            IslandGroup = r.IslandGroup
+        }));
+        await db.SaveChangesAsync(cancellationToken);
+
+        db.Provinces.AddRange(provinces.Select(p => new Province
+        {
+            Code = p.Code,
+            Name = p.Name,
+            RegionCode = p.RegionCode
+        }));
+        await db.SaveChangesAsync(cancellationToken);
+
+        db.CitiesMunicipalities.AddRange(cities.Select(c => new CityMunicipality
+        {
+            Code = c.Code,
+            Name = c.Name,
+            IsCity = c.IsCity,
+            IsCapital = c.IsCapital,
+            ProvinceCode = c.ProvinceCode,
+            RegionCode = c.RegionCode
+        }));
+        await db.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Seeded {Regions} regions, {Provinces} provinces, {Cities} cities/municipalities",
+            regions.Count, provinces.Count, cities.Count);
+    }
+
+    private async Task<List<T>?> ReadGeographySeedAsync<T>(string path, JsonSerializerOptions jsonOptions, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(path))
+        {
+            logger.LogWarning("Geography seed file not found at {Path}", path);
+            return null;
+        }
+
+        var json = await File.ReadAllTextAsync(path, cancellationToken);
+        return JsonSerializer.Deserialize<List<T>>(json, jsonOptions);
     }
 }

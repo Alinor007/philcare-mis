@@ -18,7 +18,9 @@ public sealed class AddActivityParticipantHandler(AppDbContext db)
             return Result.Failure<AddActivityParticipantResponse>(Error.NotFound("ActivityParticipants.ActivityNotFound", "Activity not found."));
         }
 
-        var staffMember = await db.StaffMembers.FirstOrDefaultAsync(p => p.Id == request.StaffMemberId, cancellationToken);
+        var staffMember = await db.StaffMembers
+            .Include(s => s.Person)
+            .FirstOrDefaultAsync(p => p.Id == request.StaffMemberId, cancellationToken);
 
         if (staffMember is null)
         {
@@ -88,6 +90,6 @@ public sealed class AddActivityParticipantHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new AddActivityParticipantResponse(
-            link.Id, link.ActivityId, link.StaffMemberId, staffMember.FullName, link.RoleInActivity, link.AttendanceStatus));
+            link.Id, link.ActivityId, link.StaffMemberId, staffMember.Person.FullName, link.RoleInActivity, link.AttendanceStatus));
     }
 }

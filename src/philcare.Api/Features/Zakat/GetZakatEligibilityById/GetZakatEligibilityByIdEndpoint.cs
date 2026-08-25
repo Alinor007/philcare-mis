@@ -6,8 +6,8 @@ namespace philcare.Api.Features.Zakat.GetZakatEligibilityById;
 
 public sealed record ZakatEligibilityDetailResponse(
     int Id,
-    int ParticipantId,
-    string ParticipantName,
+    int BeneficiaryId,
+    string BeneficiaryName,
     string AsnafCategory,
     decimal? MonthlyIncomePhp,
     int? HouseholdSize,
@@ -30,7 +30,7 @@ public sealed class GetZakatEligibilityByIdEndpoint : IEndpoint
             var eligibility = await db.ZakatEligibilities
                 .Where(z => z.Id == id)
                 .Select(z => new ZakatEligibilityDetailResponse(
-                    z.Id, z.ParticipantId, z.Participant.FullName, z.AsnafCategory, z.MonthlyIncomePhp, z.HouseholdSize,
+                    z.Id, z.BeneficiaryId, z.Beneficiary.FullName, z.AsnafCategory, z.MonthlyIncomePhp, z.HouseholdSize,
                     z.AssessmentDate, z.AssessedBy, z.AssessmentNotes, z.Status.ToString(), z.DecisionDate, z.DecidedBy,
                     z.ValidUntil, z.RejectionReason, z.Notes))
                 .FirstOrDefaultAsync(ct);

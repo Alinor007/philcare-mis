@@ -9,22 +9,22 @@ public sealed class CreateZakatEligibilityHandler(AppDbContext db)
 {
     public async Task<Result<CreateZakatEligibilityResponse>> HandleAsync(CreateZakatEligibilityRequest request, CancellationToken cancellationToken)
     {
-        var participant = await db.Participants.FirstOrDefaultAsync(p => p.Id == request.ParticipantId, cancellationToken);
+        var beneficiary = await db.Beneficiaries.FirstOrDefaultAsync(p => p.Id == request.BeneficiaryId, cancellationToken);
 
-        if (participant is null)
+        if (beneficiary is null)
         {
-            return Result.Failure<CreateZakatEligibilityResponse>(Error.NotFound("Zakat.ParticipantNotFound", "Participant not found."));
+            return Result.Failure<CreateZakatEligibilityResponse>(Error.NotFound("Zakat.BeneficiaryNotFound", "Beneficiary not found."));
         }
 
-        if (!participant.IsActive)
+        if (!beneficiary.IsActive)
         {
             return Result.Failure<CreateZakatEligibilityResponse>(
-                Error.Validation("Zakat.ParticipantInactive", "Cannot create a zakat eligibility case for an inactive participant."));
+                Error.Validation("Zakat.BeneficiaryInactive", "Cannot create a zakat eligibility case for an inactive beneficiary."));
         }
 
         var eligibility = new ZakatEligibility
         {
-            ParticipantId = request.ParticipantId,
+            BeneficiaryId = request.BeneficiaryId,
             AsnafCategory = request.AsnafCategory,
             MonthlyIncomePhp = request.MonthlyIncomePhp,
             HouseholdSize = request.HouseholdSize,
@@ -39,6 +39,6 @@ public sealed class CreateZakatEligibilityHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new CreateZakatEligibilityResponse(
-            eligibility.Id, eligibility.ParticipantId, eligibility.AsnafCategory, eligibility.Status.ToString()));
+            eligibility.Id, eligibility.BeneficiaryId, eligibility.AsnafCategory, eligibility.Status.ToString()));
     }
 }

@@ -1,16 +1,11 @@
-using philcare.Api.Features.Programs.Domain;
-
 namespace philcare.Api.Features.HumanResources.Volunteers.CreateVolunteer;
 
+/// <summary>
+/// No FullName/Gender/contact/address/PhotoUrl — those live on the Person this profile is attached
+/// to. The coordinator picks (or creates) a Person first, then fills in these volunteering fields.
+/// </summary>
 public sealed record CreateVolunteerRequest(
-    string FullName,
-    Gender Gender,
-    string? Phone,
-    string? Email,
-    string? Barangay,
-    string? City,
-    string? Province,
-    string? Region,
+    int PersonId,
     string? Skills,
     string? AvailabilityDays,
     bool OrientationCompleted,
@@ -21,4 +16,4 @@ public sealed record CreateVolunteerRequest(
     string? Notes);
 
 public sealed record CreateVolunteerResponse(
-    int Id, string FullName, Gender Gender, string Status, bool OrientationCompleted, bool IsActive);
+    int Id, int PersonId, string FullName, string Status, bool OrientationCompleted, bool IsActive);

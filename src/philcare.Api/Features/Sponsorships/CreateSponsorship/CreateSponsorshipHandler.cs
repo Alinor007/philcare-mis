@@ -22,47 +22,62 @@ public sealed class CreateSponsorshipHandler(AppDbContext db)
                 Error.Validation("Sponsorships.DonorInactive", "Cannot create a sponsorship for an inactive donor."));
         }
 
-        var participant = await db.Participants.FirstOrDefaultAsync(p => p.Id == request.ParticipantId, cancellationToken);
+        var beneficiary = await db.Beneficiaries.FirstOrDefaultAsync(p => p.Id == request.BeneficiaryId, cancellationToken);
 
-        if (participant is null)
+        if (beneficiary is null)
         {
-            return Result.Failure<CreateSponsorshipResponse>(Error.NotFound("Sponsorships.ParticipantNotFound", "Participant not found."));
+            return Result.Failure<CreateSponsorshipResponse>(Error.NotFound("Sponsorships.BeneficiaryNotFound", "Beneficiary not found."));
         }
 
-        if (!participant.IsActive)
+        if (!beneficiary.IsActive)
         {
             return Result.Failure<CreateSponsorshipResponse>(
-                Error.Validation("Sponsorships.ParticipantInactive", "Cannot create a sponsorship for an inactive participant."));
+                Error.Validation("Sponsorships.BeneficiaryInactive", "Cannot create a sponsorship for an inactive beneficiary."));
         }
 
+        // Friendly pre-check for the common case. The actual guarantee is the unique index on
+        // (DonorId, BeneficiaryId, IsActiveSponsorship) — this check alone is check-then-act and
+        // two concurrent requests can both pass it. See the catch below.
         var duplicateActive = await db.Sponsorships.AnyAsync(
-            s => s.DonorId == request.DonorId && s.ParticipantId == request.ParticipantId && s.Status != SponsorshipStatus.Ended,
+            s => s.DonorId == request.DonorId && s.BeneficiaryId == request.BeneficiaryId && s.Status != SponsorshipStatus.Ended,
             cancellationToken);
 
         if (duplicateActive)
         {
             return Result.Failure<CreateSponsorshipResponse>(
-                Error.Conflict("Sponsorships.DuplicateActive", "This donor already has an active or paused sponsorship for this participant."));
+                Error.Conflict("Sponsorships.DuplicateActive", "This donor already has an active or paused sponsorship for this beneficiary."));
         }
 
         var sponsorship = new Sponsorship
         {
             DonorId = request.DonorId,
-            ParticipantId = request.ParticipantId,
+            BeneficiaryId = request.BeneficiaryId,
             SponsorshipType = request.SponsorshipType,
             MonthlyAmountPhp = request.MonthlyAmountPhp,
             StartDate = request.StartDate,
             Status = SponsorshipStatus.Active,
             CaseWorker = request.CaseWorker,
             NextReviewDate = request.NextReviewDate,
-            Notes = request.Notes
+            Notes = request.Notes,
+            IsActiveSponsorship = true
         };
 
         db.Sponsorships.Add(sponsorship);
-        await db.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // The unique index caught a concurrent create the AnyAsync above missed — lose cleanly
+            // with the same conflict the pre-check would have returned, not a raw 500.
+            return Result.Failure<CreateSponsorshipResponse>(
+                Error.Conflict("Sponsorships.DuplicateActive", "This donor already has an active or paused sponsorship for this beneficiary."));
+        }
 
         return Result.Success(new CreateSponsorshipResponse(
-            sponsorship.Id, sponsorship.DonorId, sponsorship.ParticipantId, sponsorship.SponsorshipType,
+            sponsorship.Id, sponsorship.DonorId, sponsorship.BeneficiaryId, sponsorship.SponsorshipType,
             sponsorship.MonthlyAmountPhp, sponsorship.Status.ToString()));
     }
 }

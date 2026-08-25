@@ -6,7 +6,7 @@ using philcare.Api.Features.Sponsorships.Domain;
 namespace philcare.Api.Features.Sponsorships.GetSponsorships;
 
 public sealed record SponsorshipListItemResponse(
-    int Id, int DonorId, string DonorName, int ParticipantId, string ParticipantName,
+    int Id, int DonorId, string DonorName, int BeneficiaryId, string BeneficiaryName,
     string SponsorshipType, decimal MonthlyAmountPhp, SponsorshipStatus Status);
 
 public sealed class GetSponsorshipsEndpoint : IEndpoint
@@ -15,7 +15,7 @@ public sealed class GetSponsorshipsEndpoint : IEndpoint
     {
         app.MapGet("/api/sponsorships", async (
             int? donorId,
-            int? participantId,
+            int? beneficiaryId,
             SponsorshipStatus? status,
             string? sponsorshipType,
             AppDbContext db,
@@ -23,7 +23,7 @@ public sealed class GetSponsorshipsEndpoint : IEndpoint
         {
             var query = db.Sponsorships
                 .Include(s => s.Donor)
-                .Include(s => s.Participant)
+                .Include(s => s.Beneficiary)
                 .AsQueryable();
 
             if (donorId is not null)
@@ -31,9 +31,9 @@ public sealed class GetSponsorshipsEndpoint : IEndpoint
                 query = query.Where(s => s.DonorId == donorId);
             }
 
-            if (participantId is not null)
+            if (beneficiaryId is not null)
             {
-                query = query.Where(s => s.ParticipantId == participantId);
+                query = query.Where(s => s.BeneficiaryId == beneficiaryId);
             }
 
             if (status is not null)
@@ -47,9 +47,9 @@ public sealed class GetSponsorshipsEndpoint : IEndpoint
             }
 
             var sponsorships = await query
-                .OrderBy(s => s.Participant.FullName)
+                .OrderBy(s => s.Beneficiary.FullName)
                 .Select(s => new SponsorshipListItemResponse(
-                    s.Id, s.DonorId, s.Donor.Name, s.ParticipantId, s.Participant.FullName, s.SponsorshipType, s.MonthlyAmountPhp, s.Status))
+                    s.Id, s.DonorId, s.Donor.Name, s.BeneficiaryId, s.Beneficiary.FullName, s.SponsorshipType, s.MonthlyAmountPhp, s.Status))
                 .ToListAsync(ct);
 
             return Results.Ok(sponsorships);

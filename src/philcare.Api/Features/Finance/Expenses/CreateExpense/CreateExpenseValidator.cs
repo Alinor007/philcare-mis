@@ -15,7 +15,7 @@ public sealed class CreateExpenseValidator : AbstractValidator<CreateExpenseRequ
         RuleFor(x => x.Currency).NotEmpty().MaximumLength(10);
         RuleFor(x => x.FxRateToPhp).GreaterThan(0);
         RuleFor(x => x.ReceiptNo).MaximumLength(100);
-        RuleFor(x => x.ApprovedBy).MaximumLength(200);
+        RuleFor(x => x.ApprovedByPersonId).GreaterThan(0).When(x => x.ApprovedByPersonId is not null);
         RuleFor(x => x.SupportingDocStatus).MaximumLength(50);
         RuleFor(x => x.ExpenseFunction).MaximumLength(100);
         RuleFor(x => x.FundingBucketCode).NotEmpty().MaximumLength(20);

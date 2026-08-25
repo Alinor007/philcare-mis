@@ -11,16 +11,16 @@ public sealed class RemoveMeetingParticipantEndpoint : IEndpoint
         app.MapDelete("/api/governance/meetings/{meetingId:int}/participants/{personId:int}", async (
             int meetingId, int personId, AppDbContext db, CancellationToken ct) =>
         {
-            var participant = await db.MeetingParticipants
+            var beneficiary = await db.MeetingParticipants
                 .FirstOrDefaultAsync(mp => mp.MeetingId == meetingId && mp.PersonId == personId, ct);
 
-            if (participant is null)
+            if (beneficiary is null)
             {
                 return Results.Problem(
-                    title: "Governance.NotAParticipant", detail: "This person is not a participant in this meeting.", statusCode: StatusCodes.Status404NotFound);
+                    title: "Governance.NotABeneficiary", detail: "This person is not a beneficiary in this meeting.", statusCode: StatusCodes.Status404NotFound);
             }
 
-            db.MeetingParticipants.Remove(participant);
+            db.MeetingParticipants.Remove(beneficiary);
             await db.SaveChangesAsync(ct);
 
             return Results.NoContent();

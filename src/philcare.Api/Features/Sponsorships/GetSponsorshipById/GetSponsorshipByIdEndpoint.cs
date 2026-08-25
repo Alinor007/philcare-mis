@@ -8,8 +8,8 @@ public sealed record SponsorshipDetailResponse(
     int Id,
     int DonorId,
     string DonorName,
-    int ParticipantId,
-    string ParticipantName,
+    int BeneficiaryId,
+    string BeneficiaryName,
     string SponsorshipType,
     decimal MonthlyAmountPhp,
     DateTime StartDate,
@@ -28,7 +28,7 @@ public sealed class GetSponsorshipByIdEndpoint : IEndpoint
             var sponsorship = await db.Sponsorships
                 .Where(s => s.Id == id)
                 .Select(s => new SponsorshipDetailResponse(
-                    s.Id, s.DonorId, s.Donor.Name, s.ParticipantId, s.Participant.FullName, s.SponsorshipType, s.MonthlyAmountPhp,
+                    s.Id, s.DonorId, s.Donor.Name, s.BeneficiaryId, s.Beneficiary.FullName, s.SponsorshipType, s.MonthlyAmountPhp,
                     s.StartDate, s.EndDate, s.Status.ToString(), s.CaseWorker, s.NextReviewDate, s.Notes))
                 .FirstOrDefaultAsync(ct);
 

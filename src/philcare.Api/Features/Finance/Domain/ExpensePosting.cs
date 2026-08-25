@@ -18,7 +18,7 @@ public sealed record ExpensePostingRequest(
     decimal FxRateToPhp,
     string? ProgramOrProject = null,
     string? ReceiptNo = null,
-    string? ApprovedBy = null,
+    int? ApprovedByPersonId = null,
     string? SupportingDocStatus = null,
     int? LinkedDonationId = null,
     string? ExpenseFunction = null,
@@ -69,11 +69,10 @@ public static class ExpensePosting
                     Error.Validation("Expenses.ZakatAsnafRequired", "Zakat asnaf is required for expenses against the zakat program bucket."));
             }
 
-            if (request.BeneficiaryCount is null or 0)
-            {
-                return Result.Failure<Expense>(
-                    Error.Validation("Expenses.BeneficiaryCountRequired", "Beneficiary count is required for expenses against the zakat program bucket."));
-            }
+            // No BeneficiaryCount requirement. A distribution is now booked before anyone has been
+            // recorded as receiving it, so reach is legitimately 0 at posting time and is corrected
+            // by DistributionReach.Sync as the roster fills. Asnaf above is still required, because
+            // it is chosen up front and every roster member must match it.
         }
 
         var expense = new Expense
@@ -91,7 +90,7 @@ public static class ExpensePosting
             AmountPhp = amountPhp,
             ReceiptNo = request.ReceiptNo,
             ApprovalStatus = "Approved",
-            ApprovedBy = request.ApprovedBy,
+            ApprovedByPersonId = request.ApprovedByPersonId,
             SupportingDocStatus = request.SupportingDocStatus,
             LinkedDonationId = request.LinkedDonationId,
             ExpenseFunction = request.ExpenseFunction,

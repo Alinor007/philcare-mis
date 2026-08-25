@@ -23,14 +23,14 @@ public sealed class SubmitZakatEligibilityHandler(AppDbContext db)
         }
 
         var alreadyApproved = await db.ZakatEligibilities.AnyAsync(
-            z => z.Id != id && z.ParticipantId == eligibility.ParticipantId && z.Status == ZakatEligibilityStatus.Approved
+            z => z.Id != id && z.BeneficiaryId == eligibility.BeneficiaryId && z.Status == ZakatEligibilityStatus.Approved
                 && (z.ValidUntil == null || z.ValidUntil >= DateTime.UtcNow.Date),
             cancellationToken);
 
         if (alreadyApproved)
         {
             return Result.Failure<SubmitZakatEligibilityResponse>(
-                Error.Conflict("Zakat.AlreadyApproved", "This participant already has an approved, unexpired zakat eligibility case."));
+                Error.Conflict("Zakat.AlreadyApproved", "This beneficiary already has an approved, unexpired zakat eligibility case."));
         }
 
         eligibility.Status = ZakatEligibilityStatus.Submitted;

@@ -1,4 +1,5 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.People.Domain;
 
 namespace philcare.Api.Features.Governance.Domain;
 
@@ -37,6 +38,6 @@ public class Meeting : Entity
     public DateTime? PublicationDeadline { get; set; }
     public string? Notes { get; set; }
 
-    public List<MeetingParticipant> Participants { get; set; } = [];
+    public List<MeetingParticipant> Beneficiaries { get; set; } = [];
     public MeetingMinutes? Minutes { get; set; }
 }

@@ -18,7 +18,8 @@ public sealed record ExpenseDetailResponse(
     string Description,
     string? ReceiptNo,
     string ApprovalStatus,
-    string? ApprovedBy,
+    int? ApprovedByPersonId,
+    string? ApprovedByName,
     string? ZakatAsnaf,
     int? BeneficiaryCount,
     bool IsVoided);
@@ -34,7 +35,8 @@ public sealed class GetExpenseByIdEndpoint : IEndpoint
                 .Select(e => new ExpenseDetailResponse(
                     e.Id, e.FundCode, e.FundingBucketCode, e.AmountOriginal, e.Currency, e.FxRateToPhp, e.AmountPhp,
                     e.ExpenseCategory, e.PaymentMethod, e.ExpenseDate, e.Description, e.ReceiptNo, e.ApprovalStatus,
-                    e.ApprovedBy, e.ZakatAsnaf, e.BeneficiaryCount, e.IsVoided))
+                    e.ApprovedByPersonId, e.ApprovedByPerson != null ? e.ApprovedByPerson.FullName : null,
+                    e.ZakatAsnaf, e.BeneficiaryCount, e.IsVoided))
                 .FirstOrDefaultAsync(ct);
 
             if (expense is null)

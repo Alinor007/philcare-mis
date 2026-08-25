@@ -16,8 +16,7 @@ public sealed class UpdateProjectHandler(AppDbContext db)
         }
 
         project.Name = request.Name;
-        project.DonorId = request.DonorId;
-        project.FundCode = request.FundCode;
+        project.FundType = request.FundType;
         project.TotalBudget = request.TotalBudget;
         project.TargetBeneficiaries = request.TargetBeneficiaries;
         project.StartDate = request.StartDate;
@@ -34,7 +33,7 @@ public sealed class UpdateProjectHandler(AppDbContext db)
         await db.SaveChangesAsync(cancellationToken);
 
         return Result.Success(new UpdateProjectResponse(
-            project.Id, project.ProgramId, project.Name, project.DonorId, project.FundCode, project.TotalBudget,
+            project.Id, project.ProgramId, project.Name, project.FundType, project.TotalBudget,
             project.TargetBeneficiaries, project.StartDate, project.EndDate, project.Location, project.ProjectManager,
             project.ImplementationStatus, project.ApprovalLevel, project.Notes, project.IsActive));
     }

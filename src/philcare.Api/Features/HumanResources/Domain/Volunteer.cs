@@ -1,23 +1,24 @@
 using philcare.Api.Common.Domain;
+using philcare.Api.Features.People.Domain;
 using philcare.Api.Features.Programs.Domain;
 
 namespace philcare.Api.Features.HumanResources.Domain;
 
 /// <summary>
-/// Volunteer registry, separate from Participant (which is beneficiary-centric). Tracks
-/// safeguarding-orientation compliance, which gates enrollment into safeguarding-risk activities.
+/// Volunteer role profile — the unpaid-service fields for a <see cref="Person"/>. Identity
+/// (name, gender, contact, address, photo) lives on Person; at most one Volunteer row exists per
+/// Person (enforced by a unique index on PersonId).
+///
+/// Tracks safeguarding-orientation compliance, which gates enrollment into safeguarding-risk
+/// activities — see AddActivityVolunteerHandler. Distinct from Beneficiary (aid recipient, out of
+/// scope for Person unification) and from <see cref="StaffMember"/> (paid). One Person can now
+/// legitimately hold both a volunteer and a staff profile, which the old separate-tables model
+/// could not represent.
 /// </summary>
 public class Volunteer : Entity
 {
-    public string FullName { get; set; } = string.Empty;
-    public Gender Gender { get; set; } = Gender.Unspecified;
-    public string? Phone { get; set; }
-    public string? Email { get; set; }
-
-    public string? Barangay { get; set; }
-    public string? City { get; set; }
-    public string? Province { get; set; }
-    public string? Region { get; set; }
+    public int PersonId { get; set; }
+    public Person Person { get; set; } = null!;
 
     public string? Skills { get; set; }
 

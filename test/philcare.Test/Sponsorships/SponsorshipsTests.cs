@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using philcare.Api.Features.Finance.Donors.CreateDonor;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
 using philcare.Api.Features.Sponsorships.CreateSponsorship;
 using philcare.Test.Common;
 using Xunit;
@@ -54,19 +54,18 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
         return donor!.Id;
     }
 
-    private async Task<int> CreateParticipantAsync()
+    private async Task<int> CreateBeneficiaryAsync()
     {
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
         response.EnsureSuccessStatusCode();
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
-        return participant!.Id;
+        var beneficiary = await response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
+        return beneficiary!.Id;
     }
 
     [Fact]
@@ -74,12 +73,12 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var response = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
@@ -94,12 +93,12 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     public async Task CreateSponsorship_UnknownDonor_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var response = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = 999999,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
@@ -109,7 +108,7 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task CreateSponsorship_UnknownParticipant_ReturnsNotFound()
+    public async Task CreateSponsorship_UnknownBeneficiary_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
@@ -117,7 +116,7 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
         var response = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = 999999,
+            BeneficiaryId = 999999,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
@@ -131,12 +130,12 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var first = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
@@ -146,7 +145,7 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
         var second = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "FAMILY",
             MonthlyAmountPhp = 2000m,
             StartDate = DateTime.UtcNow
@@ -160,12 +159,12 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var createResponse = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
@@ -184,28 +183,28 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task GetSponsorships_FilteredByParticipant_ReturnsOnlyThatParticipantsSponsorships()
+    public async Task GetSponsorships_FilteredByBeneficiary_ReturnsOnlyThatBeneficiariesSponsorships()
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var createResponse = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "CHILD",
             MonthlyAmountPhp = 1500m,
             StartDate = DateTime.UtcNow
         });
         createResponse.EnsureSuccessStatusCode();
 
-        var response = await _client.GetAsync($"/api/sponsorships?participantId={participantId}");
+        var response = await _client.GetAsync($"/api/sponsorships?beneficiaryId={beneficiaryId}");
         response.EnsureSuccessStatusCode();
         var sponsorships = await response.Content.ReadFromJsonAsync<List<SponsorshipListItemDto>>(JsonOptions);
 
         Assert.Single(sponsorships!);
-        Assert.Equal(participantId, sponsorships![0].ParticipantId);
+        Assert.Equal(beneficiaryId, sponsorships![0].BeneficiaryId);
     }
 
     [Fact]
@@ -213,12 +212,12 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var donorId = await CreateDonorAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var createResponse = await _client.PostAsJsonAsync("/api/sponsorships", new
         {
             DonorId = donorId,
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             SponsorshipType = "STUDENT",
             MonthlyAmountPhp = 800m,
             StartDate = DateTime.UtcNow
@@ -235,7 +234,7 @@ public class SponsorshipsTests : IClassFixture<TestWebAppFactory>
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
     private sealed record SponsorshipListItemDto(
-        int Id, int DonorId, string DonorName, int ParticipantId, string ParticipantName, string SponsorshipType, decimal MonthlyAmountPhp, string Status);
+        int Id, int DonorId, string DonorName, int BeneficiaryId, string BeneficiaryName, string SponsorshipType, decimal MonthlyAmountPhp, string Status);
 
     private sealed record SponsorshipSummaryRowDto(string SponsorshipType, string Status, int Count, decimal TotalMonthlyCommitmentPhp);
 }

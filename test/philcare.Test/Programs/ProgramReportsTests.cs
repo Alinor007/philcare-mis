@@ -4,9 +4,12 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using philcare.Api.Features.Finance.Donors.CreateDonor;
+using philcare.Api.Features.Governance.People.CreatePerson;
+using philcare.Api.Features.HumanResources.Staff.CreateStaffMember;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Programs.Distributions.CreateDistribution;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Test.Common;
 using Xunit;
@@ -112,26 +115,23 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         activityResponse.EnsureSuccessStatusCode();
         var activity = await activityResponse.Content.ReadFromJsonAsync<CreateActivityResponse>(JsonOptions);
 
-        var participantResponse = await _client.PostAsJsonAsync("/api/participants", new
+        var beneficiaryResponse = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
-        participantResponse.EnsureSuccessStatusCode();
-        var participant = await participantResponse.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        beneficiaryResponse.EnsureSuccessStatusCode();
+        var beneficiary = await beneficiaryResponse.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
         var distributionResponse = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "FOOD_PACK",
-            ParticipantId = participant!.Id,
             ActivityId = activity!.Id,
             FundingBucketCode = "SADA-PROG",
             Quantity = 1,
             UnitValuePhp = 750m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = true,
             ReceivedConfirmation = true
@@ -151,7 +151,7 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task GetDistributionSummary_AggregatesByTypeAndCountsDistinctParticipants()
+    public async Task GetDistributionSummary_AggregatesByTypeAndCountsDistinctBeneficiaries()
     {
         await AuthenticateAsAdminAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
@@ -180,47 +180,53 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         activityResponse.EnsureSuccessStatusCode();
         var activity = await activityResponse.Content.ReadFromJsonAsync<CreateActivityResponse>(JsonOptions);
 
-        var participant1Response = await _client.PostAsJsonAsync("/api/participants", new
+        var beneficiary1Response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
-        participant1Response.EnsureSuccessStatusCode();
-        var participant1 = await participant1Response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        beneficiary1Response.EnsureSuccessStatusCode();
+        var beneficiary1 = await beneficiary1Response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
-        var participant2Response = await _client.PostAsJsonAsync("/api/participants", new
+        var beneficiary2Response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
-        participant2Response.EnsureSuccessStatusCode();
-        var participant2 = await participant2Response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        beneficiary2Response.EnsureSuccessStatusCode();
+        var beneficiary2 = await beneficiary2Response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
         // Unit values, not totals — TotalValuePhp is now server-computed as Quantity x UnitValuePhp,
         // so (unitValue, qty) = (50, 2) and (50, 3) reproduce the original totals (100, 150) => 250
         // and the original combined quantity (5) unchanged.
-        foreach (var (participantId, unitValue, qty) in new[] { (participant1!.Id, 50m, 2), (participant2!.Id, 50m, 3) })
+        foreach (var (beneficiaryId, unitValue, qty) in new[] { (beneficiary1!.Id, 50m, 2), (beneficiary2!.Id, 50m, 3) })
         {
             var response = await _client.PostAsJsonAsync("/api/distributions", new
             {
                 DistributionType = uniqueType,
-                ParticipantId = participantId,
                 ActivityId = activity!.Id,
                 FundingBucketCode = "SADA-PROG",
                 Quantity = qty,
                 UnitValuePhp = unitValue,
-                BeneficiaryCount = 1,
                 DistributionDate = DateTime.UtcNow,
                 FieldVerified = false,
                 ReceivedConfirmation = false
             });
             response.EnsureSuccessStatusCode();
+            var created = await response.Content.ReadFromJsonAsync<CreateDistributionResponse>(JsonOptions);
+
+            // Reach is the roster now — a distribution reaches nobody until someone is added to it,
+            // which is what DistinctBeneficiaries below counts.
+            var addResponse = await _client.PostAsJsonAsync($"/api/distributions/{created!.Id}/beneficiaries", new
+            {
+                BeneficiaryId = beneficiaryId,
+                ReceivedConfirmation = true
+            });
+            addResponse.EnsureSuccessStatusCode();
         }
 
         var reportResponse = await _client.GetAsync("/api/reports/distribution-summary");
@@ -229,7 +235,7 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
 
         var row = rows!.Single(r => r.DistributionType == uniqueType);
         Assert.Equal(2, row.DistributionCount);
-        Assert.Equal(2, row.DistinctParticipants);
+        Assert.Equal(2, row.DistinctBeneficiaries);
         Assert.Equal(5, row.TotalQuantity);
         Assert.Equal(250m, row.TotalValuePhp);
     }
@@ -263,20 +269,40 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         activityResponse.EnsureSuccessStatusCode();
         var activity = await activityResponse.Content.ReadFromJsonAsync<CreateActivityResponse>(JsonOptions);
 
-        var participantResponse = await _client.PostAsJsonAsync("/api/participants", new
+        var beneficiaryResponse = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
-        participantResponse.EnsureSuccessStatusCode();
-        var participant = await participantResponse.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        beneficiaryResponse.EnsureSuccessStatusCode();
+        var beneficiary = await beneficiaryResponse.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
-        var enrollResponse = await _client.PostAsJsonAsync($"/api/activities/{activity!.Id}/participants", new
+        // Staff identity lives on Person now, so a staff fixture needs a Person first.
+        var staffPersonResponse = await _client.PostAsJsonAsync("/api/governance/people", new
         {
-            ParticipantId = participant!.Id,
+            FullName = $"Staff-{Guid.NewGuid():N}",
+            PersonCategory = "MEMBER",
+            DefaultVotingRights = false
+        });
+        staffPersonResponse.EnsureSuccessStatusCode();
+        var staffPerson = await staffPersonResponse.Content.ReadFromJsonAsync<CreatePersonResponse>(JsonOptions);
+
+        var staffResponse = await _client.PostAsJsonAsync("/api/staff", new
+        {
+            PersonId = staffPerson!.Id,
+            Position = "Field Officer",
+            EmploymentType = "FULL_TIME"
+        });
+        staffResponse.EnsureSuccessStatusCode();
+        var staff = await staffResponse.Content.ReadFromJsonAsync<CreateStaffMemberResponse>(JsonOptions);
+
+        // BeneficiaryCount/PresentCount on this report count the activity's STAFF roster — the
+        // roster pivoted away from beneficiaries; beneficiary reach is the distribution side below.
+        var enrollResponse = await _client.PostAsJsonAsync($"/api/activities/{activity.Id}/participants", new
+        {
+            StaffMemberId = staff!.Id,
             AttendanceStatus = "PRESENT",
             ConsentRequired = false
         });
@@ -285,12 +311,10 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         var distributionResponse = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "FOOD_PACK",
-            ParticipantId = participant.Id,
             ActivityId = activity.Id,
             FundingBucketCode = "SADA-PROG",
             Quantity = 1,
             UnitValuePhp = 300m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = true,
             ReceivedConfirmation = true
@@ -302,7 +326,7 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         var rows = await reportResponse.Content.ReadFromJsonAsync<List<ActivityReportRowDto>>(JsonOptions);
 
         var row = rows!.Single(r => r.ActivityId == activity.Id);
-        Assert.Equal(1, row.ParticipantCount);
+        Assert.Equal(1, row.BeneficiaryCount);
         Assert.Equal(1, row.PresentCount);
         Assert.Equal(1, row.DistributionCount);
         Assert.Equal(300m, row.TotalDistributedValuePhp);
@@ -314,23 +338,22 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         await AuthenticateAsAdminAsync();
         var uniqueCategory = "WIDOW";
 
-        var participantResponse = await _client.PostAsJsonAsync("/api/participants", new
+        var beneficiaryResponse = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Female",
             VulnerabilityCategory = uniqueCategory,
             ConsentOnFile = true
         });
-        participantResponse.EnsureSuccessStatusCode();
-        var participant = await participantResponse.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        beneficiaryResponse.EnsureSuccessStatusCode();
+        var beneficiary = await beneficiaryResponse.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
         var reportResponse = await _client.GetAsync($"/api/reports/beneficiary-master-list?vulnerabilityCategory={uniqueCategory}");
         reportResponse.EnsureSuccessStatusCode();
         var rows = await reportResponse.Content.ReadFromJsonAsync<List<BeneficiaryMasterListRowDto>>(JsonOptions);
 
-        Assert.Contains(rows!, r => r.ParticipantId == participant!.Id);
+        Assert.Contains(rows!, r => r.BeneficiaryId == beneficiary!.Id);
         Assert.All(rows!, r => Assert.Equal(uniqueCategory, r.VulnerabilityCategory));
     }
 
@@ -349,10 +372,10 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
     private sealed record ActivityReportRowDto(
         int ActivityId, string ActivityName, int ProjectId, string ProjectName, string ActivityType,
         string ImplementationStatus, int? ActualBeneficiaries, DateTime? ActualEndDate,
-        int ParticipantCount, int PresentCount, int DistributionCount, decimal TotalDistributedValuePhp);
+        int BeneficiaryCount, int PresentCount, int DistributionCount, decimal TotalDistributedValuePhp);
 
     private sealed record BeneficiaryMasterListRowDto(
-        int ParticipantId, string FullName, string ParticipantType, string BeneficiaryType,
+        int BeneficiaryId, string FullName, string BeneficiaryType,
         string? VulnerabilityCategory, string? SafeguardingCategory, string Status, bool ConsentOnFile,
         int ActivityCount, int DistributionCount, decimal TotalReceivedValuePhp);
 
@@ -360,5 +383,5 @@ public class ProgramReportsTests : IClassFixture<TestWebAppFactory>
         int ProgramId, string ProgramName, int ProjectCount, int ActivityCount,
         decimal TotalProjectBudget, decimal TotalActivityBudget, decimal TotalDistributedValuePhp);
 
-    private sealed record DistributionSummaryRowDto(string DistributionType, int DistributionCount, int DistinctParticipants, int TotalQuantity, decimal TotalValuePhp);
+    private sealed record DistributionSummaryRowDto(string DistributionType, int DistributionCount, int DistinctBeneficiaries, int TotalQuantity, decimal TotalValuePhp);
 }

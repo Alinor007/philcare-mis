@@ -68,7 +68,7 @@ public class MeetingParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task AddParticipant_ThenListRoster_ShowsPerson()
+    public async Task AddBeneficiary_ThenListRoster_ShowsPerson()
     {
         await AuthenticateAsAdminAsync();
         var meetingId = await CreateMeetingAsync();
@@ -92,7 +92,7 @@ public class MeetingParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task AddParticipant_SamePersonTwice_ReturnsConflict()
+    public async Task AddBeneficiary_SamePersonTwice_ReturnsConflict()
     {
         await AuthenticateAsAdminAsync();
         var meetingId = await CreateMeetingAsync();
@@ -119,7 +119,7 @@ public class MeetingParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task AddParticipant_AssignmentBelongingToDifferentPerson_ReturnsBadRequest()
+    public async Task AddBeneficiary_AssignmentBelongingToDifferentPerson_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
         var meetingId = await CreateMeetingAsync();
@@ -160,7 +160,7 @@ public class MeetingParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task RemoveParticipant_RemovesFromRoster()
+    public async Task RemoveBeneficiary_RemovesFromRoster()
     {
         await AuthenticateAsAdminAsync();
         var meetingId = await CreateMeetingAsync();
@@ -186,7 +186,7 @@ public class MeetingParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task RemoveParticipant_NotAParticipant_ReturnsNotFound()
+    public async Task RemoveBeneficiary_NotABeneficiary_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
         var meetingId = await CreateMeetingAsync();

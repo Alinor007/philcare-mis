@@ -3,14 +3,14 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using philcare.Api.Features.Programs.Domain;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Common.Domain;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
 using philcare.Test.Common;
 using Xunit;
 
 namespace philcare.Test.Programs;
 
-public class ParticipantsTests : IClassFixture<TestWebAppFactory>
+public class BeneficiariesTests : IClassFixture<TestWebAppFactory>
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -20,7 +20,7 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
 
     private readonly HttpClient _client;
 
-    public ParticipantsTests(TestWebAppFactory factory)
+    public BeneficiariesTests(TestWebAppFactory factory)
     {
         _client = factory.CreateClient();
     }
@@ -59,24 +59,23 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task GetParticipants_AsViewer_ReturnsForbidden()
+    public async Task GetBeneficiaries_AsViewer_ReturnsForbidden()
     {
         await AuthenticateAsViewerAsync();
 
-        var response = await _client.GetAsync("/api/participants");
+        var response = await _client.GetAsync("/api/beneficiaries");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]
-    public async Task CreateParticipant_ValidRequest_DefaultsStatusToPending()
+    public async Task CreateBeneficiary_ValidRequest_DefaultsStatusToPending()
     {
         await AuthenticateAsAdminAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Female",
             VulnerabilityCategory = "WIDOW",
@@ -84,22 +83,21 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        var beneficiary = await response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
-        Assert.Equal("PENDING", participant!.Status);
-        Assert.Equal(Gender.Female, participant.Gender);
-        Assert.True(participant.IsActive);
+        Assert.Equal("PENDING", beneficiary!.Status);
+        Assert.Equal(Gender.Female, beneficiary.Gender);
+        Assert.True(beneficiary.IsActive);
     }
 
     [Fact]
-    public async Task CreateParticipant_EmptyName_ReturnsBadRequest()
+    public async Task CreateBeneficiary_EmptyName_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
             FullName = "",
-            ParticipantType = "BENEFICIARY",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             ConsentOnFile = false
@@ -109,14 +107,13 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task CreateParticipant_ConsentNotOnFile_ReturnsBadRequest()
+    public async Task CreateBeneficiary_ConsentNotOnFile_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             ConsentOnFile = false
@@ -124,18 +121,17 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
-        Assert.Equal("Participants.ConsentRequired", problem!.Title);
+        Assert.Equal("Beneficiaries.ConsentRequired", problem!.Title);
     }
 
     [Fact]
-    public async Task CreateParticipant_ElevatedSafeguardingCategory_SucceedsWithWarning()
+    public async Task CreateBeneficiary_ElevatedSafeguardingCategory_SucceedsWithWarning()
     {
         await AuthenticateAsAdminAsync();
 
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             SafeguardingCategory = "HIGH_RISK",
@@ -143,66 +139,63 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
         });
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        var beneficiary = await response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
-        Assert.True(participant!.SafeguardingWarning);
-        Assert.NotNull(participant.SafeguardingMessage);
+        Assert.True(beneficiary!.SafeguardingWarning);
+        Assert.NotNull(beneficiary.SafeguardingMessage);
     }
 
     [Fact]
-    public async Task GetParticipants_FilteredByType_ReturnsOnlyMatching()
+    public async Task GetBeneficiaries_FilteredByType_ReturnsOnlyMatching()
     {
         await AuthenticateAsAdminAsync();
         var uniqueType = $"TYPE-{Guid.NewGuid():N}"[..20];
 
-        var createResponse = await _client.PostAsJsonAsync("/api/participants", new
+        var createResponse = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = uniqueType,
-            BeneficiaryType = "INDIVIDUAL",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
+            BeneficiaryType = uniqueType,
             Gender = "Unspecified",
             ConsentOnFile = true
         });
         createResponse.EnsureSuccessStatusCode();
 
-        var listResponse = await _client.GetAsync($"/api/participants?participantType={uniqueType}");
+        var listResponse = await _client.GetAsync($"/api/beneficiaries?beneficiaryType={uniqueType}");
         listResponse.EnsureSuccessStatusCode();
-        var participants = await listResponse.Content.ReadFromJsonAsync<List<ParticipantListItemDto>>(JsonOptions);
+        var beneficiaries = await listResponse.Content.ReadFromJsonAsync<List<BeneficiaryListItemDto>>(JsonOptions);
 
-        Assert.Single(participants!);
-        Assert.Equal(uniqueType, participants![0].ParticipantType);
+        Assert.Single(beneficiaries!);
+        Assert.Equal(uniqueType, beneficiaries![0].BeneficiaryType);
     }
 
     [Fact]
-    public async Task GetParticipantById_UnknownId_ReturnsNotFound()
+    public async Task GetBeneficiaryById_UnknownId_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
 
-        var response = await _client.GetAsync("/api/participants/999999");
+        var response = await _client.GetAsync("/api/beneficiaries/999999");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
-    public async Task UpdateParticipant_ChangesStatusAndVulnerability()
+    public async Task UpdateBeneficiary_ChangesStatusAndVulnerability()
     {
         await AuthenticateAsAdminAsync();
 
-        var createResponse = await _client.PostAsJsonAsync("/api/participants", new
+        var createResponse = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             ConsentOnFile = true
         });
         createResponse.EnsureSuccessStatusCode();
-        var participant = await createResponse.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
+        var beneficiary = await createResponse.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
 
-        var updateResponse = await _client.PutAsJsonAsync($"/api/participants/{participant!.Id}", new
+        var updateResponse = await _client.PutAsJsonAsync($"/api/beneficiaries/{beneficiary!.Id}", new
         {
-            FullName = participant.FullName,
-            ParticipantType = "BENEFICIARY",
+            FullName = beneficiary.FullName,
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Male",
             VulnerabilityCategory = "PWD",
@@ -213,9 +206,9 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
 
         Assert.Equal(HttpStatusCode.OK, updateResponse.StatusCode);
 
-        var getResponse = await _client.GetAsync($"/api/participants/{participant.Id}");
+        var getResponse = await _client.GetAsync($"/api/beneficiaries/{beneficiary.Id}");
         getResponse.EnsureSuccessStatusCode();
-        var detail = await getResponse.Content.ReadFromJsonAsync<ParticipantDetailDto>(JsonOptions);
+        var detail = await getResponse.Content.ReadFromJsonAsync<BeneficiaryDetailDto>(JsonOptions);
 
         Assert.Equal("VERIFIED", detail!.Status);
         Assert.Equal("PWD", detail.VulnerabilityCategory);
@@ -224,9 +217,9 @@ public class ParticipantsTests : IClassFixture<TestWebAppFactory>
 
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
-    private sealed record ParticipantListItemDto(int Id, string FullName, string ParticipantType, string Gender, string Status, bool IsActive);
+    private sealed record BeneficiaryListItemDto(int Id, string FullName, string BeneficiaryType, string Gender, string Status, bool IsActive);
 
-    private sealed record ParticipantDetailDto(int Id, string FullName, string Status, string? VulnerabilityCategory, bool ConsentOnFile);
+    private sealed record BeneficiaryDetailDto(int Id, string FullName, string Status, string? VulnerabilityCategory, bool ConsentOnFile);
 
     private sealed record ProblemDetailsDto(string Title, string Detail);
 }

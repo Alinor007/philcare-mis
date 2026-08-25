@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
 using philcare.Api.Features.Programs.Projects.CreateProject;
+using philcare.Api.Features.Governance.People.CreatePerson;
 using philcare.Api.Features.HumanResources.Volunteers.CreateVolunteer;
 using philcare.Test.Common;
 using Xunit;
@@ -68,12 +69,29 @@ public class ActivityVolunteersTests : IClassFixture<TestWebAppFactory>
         return activity!.Id;
     }
 
+    /// <summary>
+    /// Volunteer identity lives on Person now, so a volunteer fixture needs a Person first.
+    /// </summary>
+    private async Task<int> CreatePersonAsync(string? fullName = null)
+    {
+        var response = await _client.PostAsJsonAsync("/api/governance/people", new
+        {
+            FullName = fullName ?? $"Volunteer-{Guid.NewGuid():N}",
+            PersonCategory = "MEMBER",
+            DefaultVotingRights = false
+        });
+        response.EnsureSuccessStatusCode();
+        var person = await response.Content.ReadFromJsonAsync<CreatePersonResponse>(JsonOptions);
+        return person!.Id;
+    }
+
     private async Task<int> CreateVolunteerAsync(bool orientationCompleted = false)
     {
+        var personId = await CreatePersonAsync();
+
         var response = await _client.PostAsJsonAsync("/api/volunteers", new
         {
-            FullName = $"Volunteer-{Guid.NewGuid():N}",
-            Gender = "Unspecified",
+            PersonId = personId,
             OrientationCompleted = orientationCompleted,
             CodeOfConductSigned = false,
             PoliceClearanceOnFile = false

@@ -153,6 +153,150 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
+    /// <summary>ReceiptNo is never client-supplied — CreateDonationRequest doesn't even accept it.</summary>
+    [Fact]
+    public async Task CreateDonation_AutoGeneratesReceiptNo()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+        var year = DateTime.UtcNow.Year;
+
+        var response = await _client.PostAsJsonAsync("/api/donations", new
+        {
+            DonorId = donorId,
+            AmountOriginal = 100m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
+            AdminAllowed = false,
+            AdminRateInput = 0m
+        });
+
+        response.EnsureSuccessStatusCode();
+        var donation = await response.Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
+
+        Assert.NotNull(donation!.ReceiptNo);
+        Assert.StartsWith($"DON-{year}-", donation.ReceiptNo);
+    }
+
+    /// <summary>Two donations in the same year get sequential, distinct receipt numbers.</summary>
+    [Fact]
+    public async Task CreateDonation_TwoInSameYear_GetDistinctReceiptNos()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        Task<HttpResponseMessage> Post() => _client.PostAsJsonAsync("/api/donations", new
+        {
+            DonorId = donorId,
+            AmountOriginal = 50m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
+            AdminAllowed = false,
+            AdminRateInput = 0m
+        });
+
+        var first = await (await Post()).Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
+        var second = await (await Post()).Content.ReadFromJsonAsync<CreateDonationResponse>(JsonOptions);
+
+        Assert.NotEqual(first!.ReceiptNo, second!.ReceiptNo);
+    }
+
+    [Fact]
+    public async Task CreateExpense_WithApprovedByPersonId_ResolvesApproverNameOnDetail()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        var personResponse = await _client.PostAsJsonAsync("/api/governance/people", new
+        {
+            FullName = "Finance Approver",
+            PersonCategory = "EXECUTIVE",
+            DefaultVotingRights = false
+        });
+        personResponse.EnsureSuccessStatusCode();
+        var approverId = (await personResponse.Content.ReadFromJsonAsync<CreatePersonResponseDto>(JsonOptions))!.Id;
+
+        var donationResponse = await _client.PostAsJsonAsync("/api/donations", new
+        {
+            DonorId = donorId,
+            AmountOriginal = 1000m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
+            AdminAllowed = false,
+            AdminRateInput = 0m
+        });
+        donationResponse.EnsureSuccessStatusCode();
+
+        var expenseResponse = await _client.PostAsJsonAsync("/api/expenses", new
+        {
+            ExpenseDate = DateTime.UtcNow,
+            PayeeVendor = "Test Vendor",
+            ExpenseCategory = "PROGRAM",
+            Description = "Approved by a real person record",
+            PaymentMethod = "CASH",
+            AmountOriginal = 100m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            FundingBucketCode = "SADA-PROG",
+            ApprovedByPersonId = approverId
+        });
+        expenseResponse.EnsureSuccessStatusCode();
+        var created = await expenseResponse.Content.ReadFromJsonAsync<CreateExpenseResponseDto>(JsonOptions);
+
+        var detailResponse = await _client.GetAsync($"/api/expenses/{created!.Id}");
+        detailResponse.EnsureSuccessStatusCode();
+        var detail = await detailResponse.Content.ReadFromJsonAsync<ExpenseDetailDto>(JsonOptions);
+
+        Assert.Equal(approverId, detail!.ApprovedByPersonId);
+        Assert.Equal("Finance Approver", detail.ApprovedByName);
+    }
+
+    [Fact]
+    public async Task CreateExpense_UnknownApprovedByPersonId_ReturnsNotFound()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        var donationResponse = await _client.PostAsJsonAsync("/api/donations", new
+        {
+            DonorId = donorId,
+            AmountOriginal = 1000m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            DateReceived = DateTime.UtcNow,
+            Channel = "Bank Transfer",
+            FundCode = "SADA-FUND",
+            AdminAllowed = false,
+            AdminRateInput = 0m
+        });
+        donationResponse.EnsureSuccessStatusCode();
+
+        var expenseResponse = await _client.PostAsJsonAsync("/api/expenses", new
+        {
+            ExpenseDate = DateTime.UtcNow,
+            PayeeVendor = "Test Vendor",
+            ExpenseCategory = "PROGRAM",
+            Description = "Unknown approver",
+            PaymentMethod = "CASH",
+            AmountOriginal = 100m,
+            Currency = "PHP",
+            FxRateToPhp = 1m,
+            FundingBucketCode = "SADA-PROG",
+            ApprovedByPersonId = 999999
+        });
+
+        Assert.Equal(HttpStatusCode.NotFound, expenseResponse.StatusCode);
+    }
+
     [Fact]
     public async Task CreateExpense_AmountExceedsBucketBalance_ReturnsBadRequest()
     {
@@ -289,4 +433,10 @@ public class FinanceTests : IClassFixture<TestWebAppFactory>
     private sealed record AdminRecoveryRowDto(string BucketCode, decimal PolicyCapRate);
 
     private sealed record AdminRecoveryReportDto(List<AdminRecoveryRowDto> Buckets);
+
+    private sealed record CreatePersonResponseDto(int Id);
+
+    private sealed record CreateExpenseResponseDto(int Id);
+
+    private sealed record ExpenseDetailDto(int Id, int? ApprovedByPersonId, string? ApprovedByName);
 }

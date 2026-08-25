@@ -145,7 +145,7 @@ public class MeetingsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task GetMeetingQuorum_CountsPresentAndQuorumEligibleParticipants()
+    public async Task GetMeetingQuorum_CountsPresentAndQuorumEligibleBeneficiaries()
     {
         await AuthenticateAsAdminAsync();
         var bodyId = await CreateBodyAsync(quorumRule: "50% + 1");
@@ -197,7 +197,7 @@ public class MeetingsTests : IClassFixture<TestWebAppFactory>
     private sealed record MeetingDetailDto(
         int Id, int OrgBodyId, string OrgBodyName, string MeetingType, DateTime MeetingDate, string Mode, string? CalledBy,
         int? ChairPersonId, string? ChairPersonName, int? SecretaryPersonId, string? SecretaryPersonName, string? QuorumRequired,
-        string? DecisionThreshold, string Status, DateTime? PublicationDeadline, string? Notes, int ParticipantCount, bool HasMinutes);
+        string? DecisionThreshold, string Status, DateTime? PublicationDeadline, string? Notes, int BeneficiaryCount, bool HasMinutes);
     private sealed record QuorumDto(
         int MeetingId, int EligibleCount, int PresentCount, int CountsForQuorumPresentCount, double? PresentPercentage,
         string? QuorumRequired, string? DecisionThreshold);

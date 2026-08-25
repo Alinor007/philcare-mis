@@ -7,7 +7,7 @@ using philcare.Api.Features.Finance.Donors.CreateDonor;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
 using philcare.Api.Features.Programs.Distributions.CreateDistribution;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Api.Features.Zakat.CreateZakatEligibility;
 using philcare.Test.Common;
@@ -43,19 +43,18 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.AccessToken);
     }
 
-    private async Task<int> CreateParticipantAsync()
+    private async Task<int> CreateBeneficiaryAsync()
     {
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
         response.EnsureSuccessStatusCode();
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
-        return participant!.Id;
+        var beneficiary = await response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
+        return beneficiary!.Id;
     }
 
     private async Task<int> CreateActivityAsync()
@@ -123,11 +122,11 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         return buckets!.Single(b => b.Code == bucketCode).Remaining;
     }
 
-    private async Task ApproveZakatEligibilityAsync(int participantId, string asnaf = "FUQARA", DateTime? validUntil = null)
+    private async Task ApproveZakatEligibilityAsync(int beneficiaryId, string asnaf = "FUQARA", DateTime? validUntil = null)
     {
         var createResponse = await _client.PostAsJsonAsync("/api/zakat-eligibilities", new
         {
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             AsnafCategory = asnaf,
             AssessmentDate = DateTime.UtcNow
         });
@@ -150,18 +149,16 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
 
         var response = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "FOOD_PACK",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "SADA-PROG",
             Quantity = 2,
             UnitValuePhp = 250m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = true,
             ReceivedConfirmation = true
@@ -182,18 +179,16 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
 
         var response = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "FOOD_PACK",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "SADA-PROG",
             Quantity = 5,
             UnitValuePhp = 0m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = true,
             ReceivedConfirmation = true
@@ -211,7 +206,7 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
 
         var beforeRemaining = await GetBucketRemainingAsync("SADA-PROG");
@@ -219,12 +214,10 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         var createResponse = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "FOOD_PACK",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "SADA-PROG",
             Quantity = 1,
             UnitValuePhp = 400m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = true,
             ReceivedConfirmation = true
@@ -246,45 +239,21 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.Conflict, directVoidResponse.StatusCode);
     }
 
-    [Fact]
-    public async Task CreateDistribution_UnknownParticipant_ReturnsNotFound()
-    {
-        await AuthenticateAsAdminAsync();
-        var activityId = await CreateActivityAsync();
-
-        var response = await _client.PostAsJsonAsync("/api/distributions", new
-        {
-            DistributionType = "FOOD_PACK",
-            ParticipantId = 999999,
-            ActivityId = activityId,
-            FundingBucketCode = "SADA-PROG",
-            Quantity = 1,
-            UnitValuePhp = 100m,
-            BeneficiaryCount = 1,
-            DistributionDate = DateTime.UtcNow,
-            FieldVerified = false,
-            ReceivedConfirmation = false
-        });
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
 
     [Fact]
     public async Task CreateDistribution_UnknownFundingBucket_ReturnsNotFound()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
         var response = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "CASH_ASSISTANCE",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "NOT-A-REAL-BUCKET",
             Quantity = 1,
             UnitValuePhp = 1000m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = false,
             ReceivedConfirmation = false
@@ -293,136 +262,25 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
-    [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucket_WithoutApprovedEligibility_ReturnsBadRequest()
-    {
-        await AuthenticateAsAdminAsync();
-        var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
-        await FundBucketAsync("ZAKA-FUND", 100000m);
 
-        var response = await _client.PostAsJsonAsync("/api/distributions", new
-        {
-            DistributionType = "CASH_ASSISTANCE",
-            ParticipantId = participantId,
-            ActivityId = activityId,
-            FundingBucketCode = "ZAK-PROG", // seeded Finance zakat program bucket
-            ZakatAsnaf = "FUQARA",
-            Quantity = 1,
-            UnitValuePhp = 1000m,
-            BeneficiaryCount = 1,
-            DistributionDate = DateTime.UtcNow,
-            FieldVerified = false,
-            ReceivedConfirmation = false
-        });
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
-        Assert.Equal("Distributions.ZakatEligibilityRequired", problem!.Title);
-    }
 
-    [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucket_WithApprovedEligibilityAndOmittedAsnaf_AutoFillsAsnaf()
-    {
-        await AuthenticateAsAdminAsync();
-        var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
-        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA");
-        await FundBucketAsync("ZAKA-FUND", 100000m);
-
-        var response = await _client.PostAsJsonAsync("/api/distributions", new
-        {
-            DistributionType = "CASH_ASSISTANCE",
-            ParticipantId = participantId,
-            ActivityId = activityId,
-            FundingBucketCode = "ZAK-PROG",
-            Quantity = 1,
-            UnitValuePhp = 1000m,
-            BeneficiaryCount = 1,
-            DistributionDate = DateTime.UtcNow,
-            FieldVerified = true,
-            ReceivedConfirmation = true
-        });
-
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
-        var distribution = await response.Content.ReadFromJsonAsync<CreateDistributionResponse>(JsonOptions);
-        Assert.Equal("FUQARA", distribution!.ZakatAsnaf);
-    }
-
-    [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucket_WithMismatchedAsnaf_ReturnsBadRequest()
-    {
-        await AuthenticateAsAdminAsync();
-        var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
-        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA");
-        await FundBucketAsync("ZAKA-FUND", 100000m);
-
-        var response = await _client.PostAsJsonAsync("/api/distributions", new
-        {
-            DistributionType = "CASH_ASSISTANCE",
-            ParticipantId = participantId,
-            ActivityId = activityId,
-            FundingBucketCode = "ZAK-PROG",
-            ZakatAsnaf = "GHARIMIN",
-            Quantity = 1,
-            UnitValuePhp = 1000m,
-            BeneficiaryCount = 1,
-            DistributionDate = DateTime.UtcNow,
-            FieldVerified = true,
-            ReceivedConfirmation = true
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
-        Assert.Equal("Distributions.ZakatAsnafMismatch", problem!.Title);
-    }
-
-    [Fact]
-    public async Task CreateDistribution_AgainstZakatProgramBucket_WithExpiredEligibility_ReturnsBadRequest()
-    {
-        await AuthenticateAsAdminAsync();
-        var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
-        await ApproveZakatEligibilityAsync(participantId, asnaf: "FUQARA", validUntil: DateTime.UtcNow.Date.AddDays(-1));
-        await FundBucketAsync("ZAKA-FUND", 100000m);
-
-        var response = await _client.PostAsJsonAsync("/api/distributions", new
-        {
-            DistributionType = "CASH_ASSISTANCE",
-            ParticipantId = participantId,
-            ActivityId = activityId,
-            FundingBucketCode = "ZAK-PROG",
-            Quantity = 1,
-            UnitValuePhp = 1000m,
-            BeneficiaryCount = 1,
-            DistributionDate = DateTime.UtcNow,
-            FieldVerified = true,
-            ReceivedConfirmation = true
-        });
-
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
-        Assert.Equal("Distributions.ZakatEligibilityRequired", problem!.Title);
-    }
 
     [Fact]
     public async Task VoidDistribution_ThenVoidAgain_ReturnsConflict()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
 
         var createResponse = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "HYGIENE_KIT",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "SADA-PROG",
             Quantity = 1,
             UnitValuePhp = 200m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = false,
             ReceivedConfirmation = false
@@ -438,39 +296,107 @@ public class DistributionsTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task GetDistributions_FilteredByParticipant_ReturnsOnlyThatParticipantsDistributions()
+    public async Task GetDistributions_FilteredByBeneficiary_ReturnsOnlyThatBeneficiariesDistributions()
     {
         await AuthenticateAsAdminAsync();
         var activityId = await CreateActivityAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
         await FundBucketAsync("SADA-FUND", 10000m);
 
         var createResponse = await _client.PostAsJsonAsync("/api/distributions", new
         {
             DistributionType = "SCHOOL_SUPPLIES",
-            ParticipantId = participantId,
             ActivityId = activityId,
             FundingBucketCode = "SADA-PROG",
             Quantity = 1,
             UnitValuePhp = 300m,
-            BeneficiaryCount = 1,
             DistributionDate = DateTime.UtcNow,
             FieldVerified = false,
             ReceivedConfirmation = false
         });
         createResponse.EnsureSuccessStatusCode();
+        var distribution = await createResponse.Content.ReadFromJsonAsync<CreateDistributionResponse>(JsonOptions);
 
-        var response = await _client.GetAsync($"/api/distributions?participantId={participantId}");
+        // The filter resolves through the reach roster now, so the beneficiary only matches once
+        // they have actually been recorded as receiving something.
+        var beforeRoster = await _client.GetAsync($"/api/distributions?beneficiaryId={beneficiaryId}");
+        beforeRoster.EnsureSuccessStatusCode();
+        Assert.Empty((await beforeRoster.Content.ReadFromJsonAsync<List<DistributionListItemDto>>(JsonOptions))!);
+
+        var addResponse = await _client.PostAsJsonAsync($"/api/distributions/{distribution!.Id}/beneficiaries", new
+        {
+            BeneficiaryId = beneficiaryId,
+            ReceivedConfirmation = true
+        });
+        addResponse.EnsureSuccessStatusCode();
+
+        var response = await _client.GetAsync($"/api/distributions?beneficiaryId={beneficiaryId}");
         response.EnsureSuccessStatusCode();
         var distributions = await response.Content.ReadFromJsonAsync<List<DistributionListItemDto>>(JsonOptions);
 
         Assert.Single(distributions!);
-        Assert.Equal(participantId, distributions![0].ParticipantId);
+        Assert.Equal(distribution.Id, distributions![0].Id);
+        Assert.Equal(1, distributions[0].BeneficiaryCount);
+    }
+
+    [Fact]
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithoutAsnaf_ReturnsBadRequest()
+    {
+        await AuthenticateAsAdminAsync();
+        var activityId = await CreateActivityAsync();
+        await FundBucketAsync("ZAKA-FUND", 100000m);
+
+        // Asnaf can no longer be derived from a recipient, because there isn't one at creation —
+        // the officer has to declare which asnaf the event is booked under.
+        var response = await _client.PostAsJsonAsync("/api/distributions", new
+        {
+            DistributionType = "CASH_ASSISTANCE",
+            ActivityId = activityId,
+            FundingBucketCode = "ZAK-PROG",
+            Quantity = 1,
+            UnitValuePhp = 1000m,
+            DistributionDate = DateTime.UtcNow,
+            FieldVerified = false,
+            ReceivedConfirmation = false
+        });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetailsDto>(JsonOptions);
+        Assert.Equal("Distributions.ZakatAsnafRequired", problem!.Title);
+    }
+
+    [Fact]
+    public async Task CreateDistribution_AgainstZakatProgramBucket_WithAsnaf_SucceedsWithZeroReach()
+    {
+        await AuthenticateAsAdminAsync();
+        var activityId = await CreateActivityAsync();
+        await FundBucketAsync("ZAKA-FUND", 100000m);
+
+        var response = await _client.PostAsJsonAsync("/api/distributions", new
+        {
+            DistributionType = "CASH_ASSISTANCE",
+            ActivityId = activityId,
+            FundingBucketCode = "ZAK-PROG",
+            ZakatAsnaf = "FUQARA",
+            Quantity = 1,
+            UnitValuePhp = 1000m,
+            DistributionDate = DateTime.UtcNow,
+            FieldVerified = true,
+            ReceivedConfirmation = true
+        });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var distribution = await response.Content.ReadFromJsonAsync<CreateDistributionResponse>(JsonOptions);
+
+        Assert.Equal("FUQARA", distribution!.ZakatAsnaf);
+        // The expense posts even though nobody has been recorded as reached yet.
+        Assert.NotNull(distribution.ExpenseId);
+        Assert.Equal(0, distribution.BeneficiaryCount);
     }
 
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
-    private sealed record DistributionListItemDto(int Id, string DistributionType, int ParticipantId, string ParticipantName, decimal TotalValuePhp, DateTime DistributionDate, bool IsVoided);
+    private sealed record DistributionListItemDto(int Id, string DistributionType, int BeneficiaryCount, decimal TotalValuePhp, DateTime DistributionDate, bool IsVoided);
 
     private sealed record FundingBucketDto(int Id, string Code, string Name, string FundCode, string BucketType, decimal MaxAdminRate, decimal AllocatedAmount, decimal ExpensedAmount, decimal Remaining);
 

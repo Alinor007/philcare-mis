@@ -3,7 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using philcare.Api.Features.Programs.Participants.CreateParticipant;
+using philcare.Api.Features.Programs.Beneficiaries.CreateBeneficiary;
 using philcare.Api.Features.Zakat.CreateZakatEligibility;
 using philcare.Test.Common;
 using Xunit;
@@ -38,26 +38,25 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", body!.AccessToken);
     }
 
-    private async Task<int> CreateParticipantAsync()
+    private async Task<int> CreateBeneficiaryAsync()
     {
-        var response = await _client.PostAsJsonAsync("/api/participants", new
+        var response = await _client.PostAsJsonAsync("/api/beneficiaries", new
         {
-            FullName = $"Participant-{Guid.NewGuid():N}",
-            ParticipantType = "BENEFICIARY",
+            FullName = $"Beneficiary-{Guid.NewGuid():N}",
             BeneficiaryType = "INDIVIDUAL",
             Gender = "Unspecified",
             ConsentOnFile = true
         });
         response.EnsureSuccessStatusCode();
-        var participant = await response.Content.ReadFromJsonAsync<CreateParticipantResponse>(JsonOptions);
-        return participant!.Id;
+        var beneficiary = await response.Content.ReadFromJsonAsync<CreateBeneficiaryResponse>(JsonOptions);
+        return beneficiary!.Id;
     }
 
-    private async Task<CreateZakatEligibilityResponse> CreateEligibilityAsync(int participantId)
+    private async Task<CreateZakatEligibilityResponse> CreateEligibilityAsync(int beneficiaryId)
     {
         var response = await _client.PostAsJsonAsync("/api/zakat-eligibilities", new
         {
-            ParticipantId = participantId,
+            BeneficiaryId = beneficiaryId,
             AsnafCategory = "FUQARA",
             MonthlyIncomePhp = 3000m,
             HouseholdSize = 4,
@@ -72,9 +71,9 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task CreateEligibility_ValidRequest_StartsAsDraft()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         Assert.Equal("Draft", eligibility.Status);
     }
@@ -83,8 +82,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task UpdateEligibility_WhileDraft_Succeeds()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var response = await _client.PutAsJsonAsync($"/api/zakat-eligibilities/{eligibility.Id}", new
         {
@@ -102,8 +101,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task UpdateEligibility_AfterSubmit_ReturnsConflict()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility.Id}/submit", null);
         submitResponse.EnsureSuccessStatusCode();
@@ -121,8 +120,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task SubmitThenApprove_AsAdmin_SetsValidUntil()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility.Id}/submit", null);
         submitResponse.EnsureSuccessStatusCode();
@@ -145,8 +144,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task Reject_WithoutReason_ReturnsBadRequest()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility.Id}/submit", null);
         submitResponse.EnsureSuccessStatusCode();
@@ -163,8 +162,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task Reject_WithReason_Succeeds()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility.Id}/submit", null);
         submitResponse.EnsureSuccessStatusCode();
@@ -184,8 +183,8 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task Decision_AsProgramRoleOnly_ReturnsForbidden()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
-        var eligibility = await CreateEligibilityAsync(participantId);
+        var beneficiaryId = await CreateBeneficiaryAsync();
+        var eligibility = await CreateEligibilityAsync(beneficiaryId);
 
         var submitResponse = await _client.PostAsync($"/api/zakat-eligibilities/{eligibility.Id}/submit", null);
         submitResponse.EnsureSuccessStatusCode();
@@ -213,18 +212,18 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     }
 
     [Fact]
-    public async Task Submit_SecondCaseForSameParticipant_WhileFirstApproved_ReturnsConflict()
+    public async Task Submit_SecondCaseForSameBeneficiary_WhileFirstApproved_ReturnsConflict()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
-        var first = await CreateEligibilityAsync(participantId);
+        var first = await CreateEligibilityAsync(beneficiaryId);
         var firstSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{first.Id}/submit", null);
         firstSubmit.EnsureSuccessStatusCode();
         var firstDecision = await _client.PostAsJsonAsync($"/api/zakat-eligibilities/{first.Id}/decision", new { Approve = true });
         firstDecision.EnsureSuccessStatusCode();
 
-        var second = await CreateEligibilityAsync(participantId);
+        var second = await CreateEligibilityAsync(beneficiaryId);
         var secondSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{second.Id}/submit", null);
 
         Assert.Equal(HttpStatusCode.Conflict, secondSubmit.StatusCode);
@@ -234,9 +233,9 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
     public async Task Approve_AfterPreviousApprovalExpired_Succeeds()
     {
         await AuthenticateAsAdminAsync();
-        var participantId = await CreateParticipantAsync();
+        var beneficiaryId = await CreateBeneficiaryAsync();
 
-        var first = await CreateEligibilityAsync(participantId);
+        var first = await CreateEligibilityAsync(beneficiaryId);
         var firstSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{first.Id}/submit", null);
         firstSubmit.EnsureSuccessStatusCode();
         var firstDecision = await _client.PostAsJsonAsync($"/api/zakat-eligibilities/{first.Id}/decision", new
@@ -246,7 +245,7 @@ public class ZakatEligibilityTests : IClassFixture<TestWebAppFactory>
         });
         firstDecision.EnsureSuccessStatusCode();
 
-        var second = await CreateEligibilityAsync(participantId);
+        var second = await CreateEligibilityAsync(beneficiaryId);
         var secondSubmit = await _client.PostAsync($"/api/zakat-eligibilities/{second.Id}/submit", null);
         secondSubmit.EnsureSuccessStatusCode();
 

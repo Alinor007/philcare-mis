@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using philcare.Api.Features.Programs.Activities.CreateActivity;
 using philcare.Api.Features.Programs.AidPrograms.CreateProgram;
+using philcare.Api.Features.Governance.People.CreatePerson;
 using philcare.Api.Features.HumanResources.Staff.CreateStaffMember;
 using philcare.Api.Features.Programs.Projects.CreateProject;
 using philcare.Test.Common;
@@ -69,9 +70,19 @@ public class ActivityParticipantsTests : IClassFixture<TestWebAppFactory>
 
     private async Task<int> CreateStaffMemberAsync()
     {
-        var response = await _client.PostAsJsonAsync("/api/staff", new
+        // Staff identity lives on Person now, so a staff fixture needs a Person first.
+        var personResponse = await _client.PostAsJsonAsync("/api/governance/people", new
         {
             FullName = $"Staff-{Guid.NewGuid():N}",
+            PersonCategory = "MEMBER",
+            DefaultVotingRights = false
+        });
+        personResponse.EnsureSuccessStatusCode();
+        var person = await personResponse.Content.ReadFromJsonAsync<CreatePersonResponse>(JsonOptions);
+
+        var response = await _client.PostAsJsonAsync("/api/staff", new
+        {
+            PersonId = person!.Id,
             Position = "Field Officer",
             EmploymentType = "FULL_TIME"
         });

@@ -192,7 +192,67 @@ public class DonorsTests : IClassFixture<TestWebAppFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task ReviewDonorKyd_ChangesStatus_Succeeds()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        var response = await _client.PostAsJsonAsync($"/api/donors/{donorId}/kyd-status", new { Status = "Review" });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<ReviewKydResponseDto>(JsonOptions);
+        Assert.Equal("Review", result!.KydStatus);
+
+        var getResponse = await _client.GetAsync($"/api/donors/{donorId}");
+        getResponse.EnsureSuccessStatusCode();
+        var donor = await getResponse.Content.ReadFromJsonAsync<DonorDetailDto>(JsonOptions);
+        Assert.Equal("Review", donor!.KydStatus);
+    }
+
+    /// <summary>Setting the same status twice is a no-op guard, not a silent success.</summary>
+    [Fact]
+    public async Task ReviewDonorKyd_SameStatus_ReturnsConflict()
+    {
+        await AuthenticateAsAdminAsync();
+        var donorId = await CreateDonorAsync($"Donor-{Guid.NewGuid():N}");
+
+        // New donors default to Pending.
+        var response = await _client.PostAsJsonAsync($"/api/donors/{donorId}/kyd-status", new { Status = "Pending" });
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ReviewDonorKyd_UnknownDonor_ReturnsNotFound()
+    {
+        await AuthenticateAsAdminAsync();
+
+        var response = await _client.PostAsJsonAsync("/api/donors/999999/kyd-status", new { Status = "Cleared" });
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    private async Task<int> CreateDonorAsync(string name)
+    {
+        var response = await _client.PostAsJsonAsync("/api/donors", new
+        {
+            Name = name,
+            Type = "Individual",
+            RiskRating = "Low",
+            PepFlag = false,
+            PrivacyConsent = true
+        });
+        response.EnsureSuccessStatusCode();
+        var donor = await response.Content.ReadFromJsonAsync<CreateDonorResponse>(JsonOptions);
+        return donor!.Id;
+    }
+
     private sealed record LoginResponseDto(string AccessToken, string RefreshToken, DateTime RefreshTokenExpiresAt);
 
     private sealed record DonorListItemDto(int Id, string Name, string Type, string? Email, string? Phone, bool IsActive);
+
+    private sealed record ReviewKydResponseDto(int Id, string KydStatus);
+
+    private sealed record DonorDetailDto(int Id, string KydStatus);
 }
